@@ -318,8 +318,10 @@ class Model(nn.Module):
             x_enc_ori = x_enc_sampling
 
             if x_mark_enc is not None:
-                x_mark_sampling_list.append(x_mark_enc_mark_ori[:, ::self.configs.down_sampling_window, :])
-                x_mark_enc_mark_ori = x_mark_enc_mark_ori[:, ::self.configs.down_sampling_window, :]
+                next_mark = x_mark_enc_mark_ori[:, ::self.configs.down_sampling_window, :]
+                next_mark = next_mark[:, :x_enc_sampling.shape[-1], :]
+                x_mark_sampling_list.append(next_mark)
+                x_mark_enc_mark_ori = next_mark
 
         x_enc = x_enc_sampling_list
         x_mark_enc = x_mark_sampling_list if x_mark_enc is not None else None

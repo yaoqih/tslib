@@ -7,13 +7,35 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from utils.timefeatures import time_features
-from data_provider.m4 import M4Dataset, M4Meta
+try:
+    from data_provider.m4 import M4Dataset, M4Meta
+except ImportError:
+    M4Dataset = None
+    M4Meta = None
+
 from data_provider.uea import subsample, interpolate_missing, Normalizer
-from sktime.datasets import load_from_tsfile_to_dataframe
 import warnings
 from utils.augmentation import run_augmentation_single
-from datasets import load_dataset
-from huggingface_hub import hf_hub_download
+try:
+    from sktime.datasets import load_from_tsfile_to_dataframe
+except ImportError:
+    load_from_tsfile_to_dataframe = None
+
+try:
+    from datasets import load_dataset
+except ImportError:
+    load_dataset = None
+
+try:
+    from huggingface_hub import hf_hub_download
+except ImportError:
+    hf_hub_download = None
+from utils.market_research import (
+    evaluate_prediction_frame,
+    get_feature_columns,
+    make_time_features,
+    prepare_market_dataframe,
+)
 warnings.filterwarnings('ignore')
 
 HUGGINGFACE_REPO = "thuml/Time-Series-Library"
@@ -328,6 +350,214 @@ class Dataset_Custom(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+
+
+class Dataset_MarketDaily(Dataset):
+    def __init__(self, args, root_path, flag='train', size=None,
+                 features='MS', data_path='market_daily.parquet',
+                 target='label', scale=True, timeenc=0, freq='d', seasonal_patterns=None):
+        self.args = args
+        if size is None:
+            self.seq_len = 60
+            self.label_len = 0
+            self.pred_len = 1
+        else:
+            self.seq_len = size[0]
+            self.label_len = size[1]
+            self.pred_len = size[2]
+        assert flag in ['train', 'test', 'val']
+        self.flag = flag
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+        self.root_path = root_path
+        self.data_path = data_path
+        self.feature_columns = get_feature_columns(getattr(args, "market_feature_set", "A"))
+        self.__read_data__()
+
+    def __read_data__(self):
+        cache_path = getattr(self.args, "market_cache_path", "")
+        fold_year = int(getattr(self.args, "market_fold_year", 2019))
+        market_test_end = getattr(self.args, "market_test_end", "") or f"{fold_year}-12-31"
+        split_bounds = {
+            "train": (f"{fold_year - 5}-01-01", f"{fold_year - 2}-12-31"),
+            "val": (f"{fold_year - 1}-01-01", f"{fold_year - 1}-12-31"),
+            "test": (f"{fold_year}-01-01", market_test_end),
+        }
+        local_path = os.path.join(self.root_path, self.data_path)
+        if cache_path:
+            prepare_market_dataframe(
+                parquet_path=local_path,
+                start_date=f"{getattr(self.args, 'market_start_year', 2010)}-01-01",
+                min_history=getattr(self.args, "market_min_history", 120),
+                min_avg_amount=getattr(self.args, "market_min_avg_amount", 2e7),
+                cache_path=cache_path,
+            )
+
+        earliest_needed = pd.Timestamp(split_bounds["train"][0]) - pd.Timedelta(days=500)
+        latest_needed = pd.Timestamp(split_bounds["test"][1])
+        read_path = cache_path if cache_path and os.path.exists(cache_path) else local_path
+        frame = pd.read_parquet(
+            read_path,
+            filters=[
+                ("date", ">=", earliest_needed.strftime("%Y-%m-%d")),
+                ("date", "<=", latest_needed.strftime("%Y-%m-%d")),
+            ],
+        )
+        split_start, split_end = split_bounds[self.flag]
+        frame = frame.copy()
+        frame["date_ts"] = pd.to_datetime(frame["date"])
+
+        train_mask = (frame["date_ts"] >= pd.Timestamp(split_bounds["train"][0])) & (
+            frame["date_ts"] <= pd.Timestamp(split_bounds["train"][1])
+        )
+        self.feature_scaler = StandardScaler()
+        self.target_scaler = StandardScaler()
+        train_feature_matrix = frame.loc[train_mask, self.feature_columns].to_numpy(dtype=np.float32)
+        train_target_matrix = frame.loc[train_mask, [self.target]].to_numpy(dtype=np.float32)
+        self.feature_scaler.fit(train_feature_matrix)
+        self.target_scaler.fit(train_target_matrix)
+
+        input_feature_matrix = frame[self.feature_columns].to_numpy(dtype=np.float32)
+        scaled_feature_matrix = self.feature_scaler.transform(input_feature_matrix) if self.scale else input_feature_matrix
+
+        target_matrix = np.zeros_like(scaled_feature_matrix, dtype=np.float32)
+        current_target = frame[[self.target]].to_numpy(dtype=np.float32)
+        if self.scale:
+            current_target = self.target_scaler.transform(current_target)
+        target_matrix[:, -1] = current_target.reshape(-1)
+
+        time_matrix = make_time_features(frame["date"])
+
+        split_mask = (frame["date_ts"] >= pd.Timestamp(split_start)) & (frame["date_ts"] <= pd.Timestamp(split_end))
+        sample_cache_path = self._sample_cache_path(fold_year)
+        use_cached_samples = False
+        if sample_cache_path and os.path.exists(sample_cache_path):
+            cached_meta = pd.read_parquet(sample_cache_path)
+            if self._is_valid_sample_meta(cached_meta, frame):
+                self.sample_meta = cached_meta
+                self.samples = self.sample_meta.to_dict(orient="records")
+                use_cached_samples = True
+
+        if not use_cached_samples:
+            self.samples = []
+            split_positions = frame.index[split_mask].to_numpy()
+            split_position_set = set(split_positions.tolist())
+            for code, code_frame in frame.groupby("code", sort=False):
+                positions = code_frame.index.to_numpy()
+                if positions.shape[0] <= self.seq_len:
+                    continue
+                candidate_positions = positions[self.seq_len - 1:-1]
+                if candidate_positions.size == 0:
+                    continue
+                candidate_positions = np.array(
+                    [pos for pos in candidate_positions if pos in split_position_set],
+                    dtype=np.int64,
+                )
+                if candidate_positions.size == 0:
+                    continue
+                sample_frame = pd.DataFrame(
+                    {
+                        "x_start": candidate_positions - self.seq_len + 1,
+                        "x_end": candidate_positions + 1,
+                        "y_start": candidate_positions + 1 - self.label_len,
+                        "y_end": candidate_positions + 1 - self.label_len + self.label_len + self.pred_len,
+                        "code": code,
+                        "date": frame.loc[candidate_positions, "date"].to_numpy(),
+                        "label": frame.loc[candidate_positions, self.target].to_numpy(dtype=np.float32),
+                        "label_cls": frame.loc[candidate_positions, "label_cls"].to_numpy(dtype=np.float32),
+                        "can_buy_on_next_open": frame.loc[
+                            candidate_positions, "can_buy_on_next_open"
+                        ].to_numpy(dtype=bool),
+                    }
+                )
+                self.samples.extend(sample_frame.to_dict(orient="records"))
+            self.sample_meta = pd.DataFrame(self.samples)
+            if sample_cache_path:
+                os.makedirs(os.path.dirname(sample_cache_path), exist_ok=True)
+                self.sample_meta.to_parquet(sample_cache_path, index=False)
+
+        self.feature_data = scaled_feature_matrix
+        self.target_data = target_matrix
+        self.time_data = time_matrix
+        if not hasattr(self, "sample_meta"):
+            self.sample_meta = pd.DataFrame(self.samples)
+        self.sample_cls_labels = self.sample_meta["label_cls"].to_numpy(dtype=np.float32)
+
+    def _sample_cache_path(self, fold_year):
+        cache_path = getattr(self.args, "market_cache_path", "")
+        if not cache_path:
+            return ""
+        base, ext = os.path.splitext(cache_path)
+        return f"{base}.fold{fold_year}.{self.flag}.sl{self.seq_len}{ext}"
+
+    def _is_valid_sample_meta(self, sample_meta, frame):
+        if sample_meta.empty:
+            return False
+        if "can_buy_on_next_open" not in sample_meta.columns:
+            return False
+        if "label_cls" not in sample_meta.columns:
+            return False
+        expected_y_len = self.label_len + self.pred_len
+        if not ((sample_meta["x_end"] - sample_meta["x_start"]) == self.seq_len).all():
+            return False
+        if not ((sample_meta["y_end"] - sample_meta["y_start"]) == expected_y_len).all():
+            return False
+        max_len = len(frame)
+        if (sample_meta[["x_start", "y_start"]] < 0).any().any():
+            return False
+        if (sample_meta[["x_end", "y_end"]] > max_len).any().any():
+            return False
+
+        # Validate that cached window endpoints still belong to the same stock.
+        x_start_codes = frame.iloc[sample_meta["x_start"].to_numpy()]["code"].to_numpy()
+        x_end_codes = frame.iloc[(sample_meta["x_end"] - 1).to_numpy()]["code"].to_numpy()
+        y_start_codes = frame.iloc[sample_meta["y_start"].to_numpy()]["code"].to_numpy()
+        cached_codes = sample_meta["code"].to_numpy()
+        return bool(
+            (x_start_codes == cached_codes).all()
+            and (x_end_codes == cached_codes).all()
+            and (y_start_codes == cached_codes).all()
+        )
+
+    def __getitem__(self, index):
+        sample = self.samples[index]
+        seq_x = np.ascontiguousarray(self.feature_data[sample["x_start"]:sample["x_end"]], dtype=np.float32)
+        seq_y = np.ascontiguousarray(self.target_data[sample["y_start"]:sample["y_end"]], dtype=np.float32)
+        seq_x_mark = np.ascontiguousarray(self.time_data[sample["x_start"]:sample["x_end"]], dtype=np.float32)
+        seq_y_mark = np.ascontiguousarray(self.time_data[sample["y_start"]:sample["y_end"]], dtype=np.float32)
+        return (
+            torch.tensor(seq_x, dtype=torch.float32),
+            torch.tensor(seq_y, dtype=torch.float32),
+            torch.tensor(seq_x_mark, dtype=torch.float32),
+            torch.tensor(seq_y_mark, dtype=torch.float32),
+            index,
+        )
+
+    def __len__(self):
+        return len(self.samples)
+
+    def build_prediction_frame(self, sample_ids, preds, trues):
+        meta = self.sample_meta.iloc[sample_ids].reset_index(drop=True)
+        pred_values = preds.reshape(-1).astype(np.float32)
+        true_values = trues.reshape(-1).astype(np.float32)
+        if self.scale:
+            pred_values = self.target_scaler.inverse_transform(pred_values.reshape(-1, 1)).reshape(-1)
+            true_values = self.target_scaler.inverse_transform(true_values.reshape(-1, 1)).reshape(-1)
+        return pd.DataFrame(
+            {
+                "date": meta["date"],
+                "code": meta["code"],
+                "pred": pred_values,
+                "true": true_values,
+                "tradable": meta["can_buy_on_next_open"].astype(bool).to_numpy(),
+            }
+        )
+
+    def evaluate_predictions(self, prediction_frame):
+        return evaluate_prediction_frame(prediction_frame)
 
 
 class Dataset_M4(Dataset):

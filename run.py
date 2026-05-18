@@ -93,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
     parser.add_argument('--des', type=str, default='test', help='exp description')
     parser.add_argument('--loss', type=str, default='MSE', help='loss function')
+    parser.add_argument('--huber_delta', type=float, default=1.0, help='delta for Huber loss')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 
@@ -150,6 +151,26 @@ if __name__ == '__main__':
 
     parser.add_argument('--individual', action='store_true', default=False,
                         help='DLinear: a linear layer for each variate(channel) individually')
+
+    # market research
+    parser.add_argument('--market_start_year', type=int, default=2010, help='start year for market data')
+    parser.add_argument('--market_fold_year', type=int, default=2019, help='test year for rolling market fold')
+    parser.add_argument('--market_test_end', type=str, default='', help='override test end date for market fold')
+    parser.add_argument('--market_feature_set', type=str, default='A', help='market feature set id')
+    parser.add_argument('--market_min_history', type=int, default=120, help='min listing history in trading days')
+    parser.add_argument('--market_min_avg_amount', type=float, default=2e7, help='min 20d avg amount')
+    parser.add_argument('--market_cache_path', type=str, default='./cache/market_daily_features.parquet',
+                        help='cached feature parquet path')
+    parser.add_argument('--market_aux_cls', action='store_true', default=False,
+                        help='enable auxiliary BCE classification head for market forecasting')
+    parser.add_argument('--market_cls_weight', type=float, default=0.5,
+                        help='loss weight for auxiliary market BCE head')
+    parser.add_argument('--market_rank_loss', action='store_true', default=False,
+                        help='enable pairwise rank loss for market forecasting')
+    parser.add_argument('--market_rank_weight', type=float, default=0.1,
+                        help='loss weight for pairwise rank loss')
+    parser.add_argument('--market_rank_margin', type=float, default=0.0,
+                        help='margin for pairwise rank loss')
 
     # TimeFilter
     parser.add_argument('--alpha', type=float, default=0.1, help='KNN for Graph Construction')

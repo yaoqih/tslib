@@ -11,8 +11,24 @@ import warnings
 import numpy as np
 from utils.dtw_metric import dtw, accelerated_dtw
 from utils.augmentation import run_augmentation, run_augmentation_single
+from utils.market_multitask import combine_market_multitask_losses, compute_pairwise_rank_loss
 
 warnings.filterwarnings('ignore')
+
+
+class MarketForecastMultiTaskWrapper(nn.Module):
+    def __init__(self, base_model, feature_dim):
+        super().__init__()
+        self.base_model = base_model
+        self.cls_head = nn.Linear(feature_dim, 1)
+
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
+        forecast = self.base_model(x_enc, x_mark_enc, x_dec, x_mark_dec, mask=mask)
+        cls_logits = self.cls_head(forecast)
+        return {
+            'forecast': forecast,
+            'cls_logits': cls_logits,
+        }
 
 
 class Exp_Long_Term_Forecast(Exp_Basic):
@@ -21,6 +37,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
     def _build_model(self):
         model = self.model_dict[self.args.model](self.args).float()
+        if self._use_market_aux_cls():
+            model = MarketForecastMultiTaskWrapper(model, self.args.c_out).float()
 
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
@@ -35,15 +53,97 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
-        criterion = nn.MSELoss()
-        return criterion
+        loss_name = self.args.loss.upper()
+        if loss_name == 'MSE':
+            return nn.MSELoss()
+        if loss_name == 'MAE':
+            return nn.L1Loss()
+        if loss_name == 'HUBER':
+            return nn.HuberLoss(delta=getattr(self.args, 'huber_delta', 1.0))
+        raise ValueError(f'Unsupported loss: {self.args.loss}')
+
+    def _use_market_aux_cls(self):
+        return bool(
+            getattr(self.args, 'market_aux_cls', False)
+            and self.args.data == 'market_daily'
+            and self.args.task_name == 'long_term_forecast'
+        )
+
+    def _use_market_rank_loss(self):
+        return bool(
+            getattr(self.args, 'market_rank_loss', False)
+            and self.args.data == 'market_daily'
+            and self.args.task_name == 'long_term_forecast'
+        )
+
+    def _split_model_outputs(self, outputs):
+        if isinstance(outputs, dict):
+            return outputs['forecast'], outputs.get('cls_logits')
+        return outputs, None
+
+    def _build_market_cls_targets(self, batch_meta, dataset):
+        indices = batch_meta.detach().cpu().numpy().astype(np.int64)
+        cls_values = dataset.sample_cls_labels[indices].reshape(-1, self.args.pred_len, 1)
+        return torch.tensor(cls_values, dtype=torch.float32, device=self.device)
+
+    def _compute_market_loss(self, outputs, batch_y, batch_meta, dataset, reg_criterion):
+        forecast, cls_logits = self._split_model_outputs(outputs)
+        f_dim = -1 if self.args.features == 'MS' else 0
+        reg_pred = forecast[:, -self.args.pred_len:, f_dim:]
+        reg_true = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+        reg_loss = reg_criterion(reg_pred, reg_true)
+        rank_loss = reg_loss.new_tensor(0.0)
+        if self._use_market_rank_loss():
+            rank_loss = compute_pairwise_rank_loss(
+                pred=reg_pred.reshape(-1),
+                target=reg_true.reshape(-1),
+                margin=self.args.market_rank_margin,
+            )
+            reg_loss = reg_loss + self.args.market_rank_weight * rank_loss
+
+        if not self._use_market_aux_cls():
+            return {
+                'total_loss': reg_loss,
+                'reg_loss': reg_loss,
+                'cls_loss': reg_loss.new_tensor(0.0),
+                'rank_loss': rank_loss,
+                'reg_pred': reg_pred,
+                'reg_true': reg_true,
+            }
+
+        cls_target = self._build_market_cls_targets(batch_meta, dataset)
+        cls_loss = self.cls_criterion(
+            cls_logits[:, -self.args.pred_len:, :].reshape(-1),
+            cls_target.reshape(-1),
+        )
+        losses = combine_market_multitask_losses(
+            reg_loss=reg_loss,
+            cls_loss=cls_loss,
+            cls_weight=self.args.market_cls_weight,
+        )
+        return {
+            'total_loss': losses['total_loss'],
+            'reg_loss': losses['reg_loss'],
+            'cls_loss': losses['cls_loss'],
+            'rank_loss': rank_loss,
+            'reg_pred': reg_pred,
+            'reg_true': reg_true,
+        }
+
+    def _unpack_batch(self, batch):
+        if len(batch) == 5:
+            batch_x, batch_y, batch_x_mark, batch_y_mark, batch_meta = batch
+            return batch_x, batch_y, batch_x_mark, batch_y_mark, batch_meta
+        batch_x, batch_y, batch_x_mark, batch_y_mark = batch
+        return batch_x, batch_y, batch_x_mark, batch_y_mark, None
  
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
         self.model.eval()
         with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
+            for i, batch in enumerate(vali_loader):
+                batch_x, batch_y, batch_x_mark, batch_y_mark, batch_meta = self._unpack_batch(batch)
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float()
 
@@ -59,14 +159,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-
-                pred = outputs.detach()
-                true = batch_y.detach()
-
-                loss = criterion(pred, true)
+                losses = self._compute_market_loss(outputs, batch_y, batch_meta, vali_data, criterion)
+                loss = losses['total_loss']
 
                 total_loss.append(loss.item())
         total_loss = np.average(total_loss)
@@ -89,6 +183,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
+        if self._use_market_aux_cls():
+            self.cls_criterion = nn.BCEWithLogitsLoss()
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -99,7 +195,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
+            for i, batch in enumerate(train_loader):
+                batch_x, batch_y, batch_x_mark, batch_y_mark, batch_meta = self._unpack_batch(batch)
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
@@ -115,19 +212,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                        f_dim = -1 if self.args.features == 'MS' else 0
-                        outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                        batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                        loss = criterion(outputs, batch_y)
+                        losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion)
+                        loss = losses['total_loss']
                         train_loss.append(loss.item())
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    loss = criterion(outputs, batch_y)
+                    losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion)
+                    loss = losses['total_loss']
                     train_loss.append(loss.item())
 
                 if (i + 1) % 100 == 0:
@@ -173,13 +264,16 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         preds = []
         trues = []
+        sample_ids = []
         folder_path = './test_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         self.model.eval()
+        enable_visual = not hasattr(test_data, 'build_prediction_frame')
         with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+            for i, batch in enumerate(test_loader):
+                batch_x, batch_y, batch_x_mark, batch_y_mark, batch_meta = self._unpack_batch(batch)
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
 
@@ -196,8 +290,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 else:
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
+                forecast, _ = self._split_model_outputs(outputs)
                 f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, :]
+                outputs = forecast[:, -self.args.pred_len:, :]
                 batch_y = batch_y[:, -self.args.pred_len:, :].to(self.device)
                 outputs = outputs.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
@@ -216,7 +311,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 preds.append(pred)
                 trues.append(true)
-                if i % 20 == 0:
+                if batch_meta is not None:
+                    sample_ids.append(batch_meta.detach().cpu().numpy())
+                if enable_visual and i % 20 == 0:
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
                         shape = input.shape
@@ -231,6 +328,19 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
         print('test shape:', preds.shape, trues.shape)
+
+        if hasattr(test_data, 'build_prediction_frame') and sample_ids:
+            pred_frame = test_data.build_prediction_frame(
+                np.concatenate(sample_ids, axis=0),
+                preds[:, :, -1:],
+                trues[:, :, -1:],
+            )
+            market_metrics = test_data.evaluate_predictions(pred_frame)
+            pred_frame.to_csv(os.path.join(folder_path, 'top1_predictions.csv'), index=False)
+            with open(os.path.join(folder_path, 'market_metrics.txt'), 'w') as mf:
+                for key, value in market_metrics.items():
+                    mf.write(f'{key}: {value}\n')
+            print('market metrics:', market_metrics)
 
         # result save
         folder_path = './results/' + setting + '/'

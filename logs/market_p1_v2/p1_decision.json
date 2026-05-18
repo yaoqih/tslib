@@ -1,0 +1,13 @@
+{
+  "chosen_timesnet_variant": "timesnet_hbce_a01",
+  "timesnet_summary_csv": "logs/market_p1_v2/timesnet_challenger_summary.csv",
+  "p1_ensemble_summary_csv": "logs/market_p1_v2/p1_ensemble_summary.csv",
+  "candidate_years": [
+    2015,
+    2017,
+    2019,
+    2021,
+    2022,
+    2024
+  ]
+}

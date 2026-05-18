@@ -1,0 +1,38 @@
+{
+  "chosen_timesnet_variant": "timesnet_hbce_a01",
+  "candidate_years": [
+    2015,
+    2017,
+    2019,
+    2021,
+    2022,
+    2024
+  ],
+  "selector_method": "top1_gap",
+  "fallback_source": "left",
+  "quantiles": [
+    0.8,
+    0.9
+  ],
+  "scenarios": [
+    {
+      "scenario": "low",
+      "buy_cost_bps": 5.0,
+      "sell_cost_bps": 10.0
+    },
+    {
+      "scenario": "base",
+      "buy_cost_bps": 8.0,
+      "sell_cost_bps": 13.0
+    },
+    {
+      "scenario": "high",
+      "buy_cost_bps": 12.0,
+      "sell_cost_bps": 17.0
+    }
+  ],
+  "gross_summary_csv": "logs/market_live_proxy/gross_summary.csv",
+  "proxy_summary_csv": "logs/market_live_proxy/proxy_summary.csv",
+  "proxy_year_summary_csv": "logs/market_live_proxy/proxy_year_summary.csv",
+  "gated_thresholds_csv": "logs/market_live_proxy/gated_thresholds.csv"
+}

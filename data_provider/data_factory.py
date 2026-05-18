@@ -1,7 +1,8 @@
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4, PSMSegLoader, \
-    MSLSegLoader, SMAPSegLoader, SMDSegLoader, SWATSegLoader, UEAloader
+    MSLSegLoader, SMAPSegLoader, SMDSegLoader, SWATSegLoader, UEAloader, Dataset_MarketDaily
 from data_provider.uea import collate_fn
 from torch.utils.data import DataLoader
+import torch
 
 data_dict = {
     'ETTh1': Dataset_ETT_hour,
@@ -10,6 +11,7 @@ data_dict = {
     'ETTm2': Dataset_ETT_minute,
     'custom': Dataset_Custom,
     'm4': Dataset_M4,
+    'market_daily': Dataset_MarketDaily,
     'PSM': PSMSegLoader,
     'MSL': MSLSegLoader,
     'SMAP': SMAPSegLoader,
@@ -17,6 +19,15 @@ data_dict = {
     'SWAT': SWATSegLoader,
     'UEA': UEAloader
 }
+
+
+def market_collate_fn(batch):
+    seq_x = torch.stack([item[0] for item in batch], dim=0)
+    seq_y = torch.stack([item[1] for item in batch], dim=0)
+    seq_x_mark = torch.stack([item[2] for item in batch], dim=0)
+    seq_y_mark = torch.stack([item[3] for item in batch], dim=0)
+    meta = torch.tensor([item[4] for item in batch], dtype=torch.long)
+    return seq_x, seq_y, seq_x_mark, seq_y_mark, meta
 
 
 def data_provider(args, flag):
@@ -77,10 +88,12 @@ def data_provider(args, flag):
             seasonal_patterns=args.seasonal_patterns
         )
         print(flag, len(data_set))
+        collate = market_collate_fn if args.data == 'market_daily' else None
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
-            drop_last=drop_last)
+            drop_last=drop_last,
+            collate_fn=collate)
         return data_set, data_loader

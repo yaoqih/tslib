@@ -1,0 +1,3 @@
+strategy,quantile,threshold,fallback_source
+gated_q80_left,0.8,0.025040923759999993,left
+gated_q90_left,0.9,0.07548588720000005,left
