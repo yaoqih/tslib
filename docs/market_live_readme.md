@@ -21,15 +21,16 @@
 
 当前冻结的实盘策略为：
 
+- `legacy_backup_v1`
+  - 当前默认主策略
+  - 组合：`itransformer + patchtst`
+  - 方法：`gated_q50_left`
 - `primary_live_v1`
   - 组合：`wpmixer + timemixer + timesnet`
   - 方法：`zscore_mean`
 - `backup_live_v1`
   - 组合：`wpmixer + timesnet`
   - 方法：`mean`
-- `legacy_backup_v1`
-  - 组合：`itransformer + patchtst`
-  - 方法：`gated_q50_left`
 
 ## 配置文件说明
 
