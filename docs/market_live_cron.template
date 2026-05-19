@@ -1,0 +1,8 @@
+# Daily live inference after market close
+10 16 * * 1-5 cd /huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2 && /huanghb28/aigc/cv_banc/zsw/zhuangcailin/envs/tslib/bin/bash scripts/market_daily/run_live_pipeline.sh infer $(date +\%F) >> logs/market_live_prod/cron_infer.log 2>&1
+
+# Weekly retrain on Saturday
+30 09 * * 6 cd /huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2 && /huanghb28/aigc/cv_banc/zsw/zhuangcailin/envs/tslib/bin/bash scripts/market_daily/run_live_pipeline.sh train $(date +\%F) $(date +\%Y) >> logs/market_live_prod/cron_train.log 2>&1
+
+# Weekly replay audit on Sunday
+00 10 * * 0 cd /huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2 && /huanghb28/aigc/cv_banc/zsw/zhuangcailin/envs/tslib/bin/bash scripts/market_daily/run_live_pipeline.sh replay $(date +\%F) $(date +\%Y) >> logs/market_live_prod/cron_replay.log 2>&1

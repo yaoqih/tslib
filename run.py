@@ -95,6 +95,8 @@ if __name__ == '__main__':
     parser.add_argument('--loss', type=str, default='MSE', help='loss function')
     parser.add_argument('--huber_delta', type=float, default=1.0, help='delta for Huber loss')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
+    parser.add_argument('--train_mode', type=str, default='best_val',
+                        help='checkpoint selection mode: best_val or fixed_epoch')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 
     # GPU
@@ -161,6 +163,8 @@ if __name__ == '__main__':
     parser.add_argument('--market_min_avg_amount', type=float, default=2e7, help='min 20d avg amount')
     parser.add_argument('--market_cache_path', type=str, default='./cache/market_daily_features.parquet',
                         help='cached feature parquet path')
+    parser.add_argument('--market_train_full_window', action='store_true', default=False,
+                        help='expand market train split to include the original validation year')
     parser.add_argument('--market_aux_cls', action='store_true', default=False,
                         help='enable auxiliary BCE classification head for market forecasting')
     parser.add_argument('--market_cls_weight', type=float, default=0.5,

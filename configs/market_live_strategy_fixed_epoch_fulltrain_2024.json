@@ -1,0 +1,173 @@
+{
+  "parquet_path": "./market_daily.parquet",
+  "cache_path": "./cache/market_daily_features.parquet",
+  "checkpoints_dir": "./checkpoints",
+  "test_results_dir": "./test_results",
+  "logs_dir": "./logs/market_live_prod",
+  "experiment_tag": "fixedep10_fulltrain_2024",
+  "market_start_year": 2010,
+  "market_min_history": 120,
+  "market_min_avg_amount": 20000000.0,
+  "market_train_full_window": true,
+  "train_mode": "fixed_epoch",
+  "train_epochs": 10,
+  "patience": 2,
+  "batch_size": 4096,
+  "num_workers": 8,
+  "learning_rate": 0.0003,
+  "lradj": "cosine",
+  "loss": "Huber",
+  "huber_delta": 1.0,
+  "primary_strategy": "primary_live_v1",
+  "backup_strategies": [
+    "backup_live_v1",
+    "legacy_backup_v1"
+  ],
+  "switch_rules": {
+    "scenario": "base",
+    "lookback_days": 60,
+    "min_hold_days": 5,
+    "min_excess_mean_return": 0.0005,
+    "min_excess_sharpe": 0.05,
+    "state_path": "./logs/market_live_prod/active_strategy_state.json"
+  },
+  "scenarios": {
+    "low": {
+      "buy_cost_bps": 5.0,
+      "sell_cost_bps": 10.0
+    },
+    "base": {
+      "buy_cost_bps": 8.0,
+      "sell_cost_bps": 13.0
+    },
+    "high": {
+      "buy_cost_bps": 12.0,
+      "sell_cost_bps": 17.0
+    }
+  },
+  "models": {
+    "wpmixer": {
+      "model": "WPMixer",
+      "seq_len": 40,
+      "feature_set": "A",
+      "d_model": 128,
+      "d_ff": 256,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "timeF",
+      "des": "market_fullroll_wpmixer_sl40_p16_lr3e4",
+      "use_amp": true
+    },
+    "timemixer": {
+      "model": "TimeMixer",
+      "seq_len": 20,
+      "feature_set": "A",
+      "d_model": 128,
+      "d_ff": 256,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "fixed",
+      "des": "market_round1_fsA",
+      "use_amp": true,
+      "extra_args": {
+        "down_sampling_layers": 3,
+        "down_sampling_method": "avg",
+        "down_sampling_window": 2
+      }
+    },
+    "timesnet": {
+      "model": "TimesNet",
+      "seq_len": 20,
+      "feature_set": "A",
+      "d_model": 128,
+      "d_ff": 256,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "fixed",
+      "des": "market_round1_fsA",
+      "use_amp": false
+    },
+    "itransformer": {
+      "model": "iTransformer",
+      "seq_len": 20,
+      "feature_set": "A",
+      "d_model": 128,
+      "d_ff": 256,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "timeF",
+      "des": "market_round1_fsA",
+      "use_amp": true
+    },
+    "patchtst": {
+      "model": "PatchTST",
+      "seq_len": 60,
+      "feature_set": "A",
+      "d_model": 128,
+      "d_ff": 256,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "timeF",
+      "des": "market_round1_fsA",
+      "use_amp": true
+    },
+    "dlinear_a01": {
+      "model": "DLinear",
+      "seq_len": 120,
+      "feature_set": "A",
+      "d_model": 64,
+      "d_ff": 128,
+      "e_layers": 2,
+      "d_layers": 1,
+      "n_heads": 4,
+      "factor": 3,
+      "dropout": 0.1,
+      "embed": "timeF",
+      "des": "market_hbce_a01_fsA",
+      "use_amp": true
+    }
+  },
+  "strategies": {
+    "primary_live_v1": {
+      "models": [
+        "wpmixer",
+        "timemixer",
+        "timesnet"
+      ],
+      "kind": "combo",
+      "method": "zscore_mean"
+    },
+    "backup_live_v1": {
+      "models": [
+        "wpmixer",
+        "timesnet"
+      ],
+      "kind": "combo",
+      "method": "mean"
+    },
+    "legacy_backup_v1": {
+      "models": [
+        "itransformer",
+        "patchtst"
+      ],
+      "kind": "gated",
+      "quantile": 0.5,
+      "fallback_source": "left"
+    }
+  }
+}

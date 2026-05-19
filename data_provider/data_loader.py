@@ -381,8 +381,9 @@ class Dataset_MarketDaily(Dataset):
         cache_path = getattr(self.args, "market_cache_path", "")
         fold_year = int(getattr(self.args, "market_fold_year", 2019))
         market_test_end = getattr(self.args, "market_test_end", "") or f"{fold_year}-12-31"
+        train_end_year = fold_year - 1 if getattr(self.args, "market_train_full_window", False) else fold_year - 2
         split_bounds = {
-            "train": (f"{fold_year - 5}-01-01", f"{fold_year - 2}-12-31"),
+            "train": (f"{fold_year - 5}-01-01", f"{train_end_year}-12-31"),
             "val": (f"{fold_year - 1}-01-01", f"{fold_year - 1}-12-31"),
             "test": (f"{fold_year}-01-01", market_test_end),
         }

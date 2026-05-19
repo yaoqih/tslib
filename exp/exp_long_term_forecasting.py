@@ -179,7 +179,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         time_now = time.time()
 
         train_steps = len(train_loader)
-        early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
+        train_mode = getattr(self.args, 'train_mode', 'best_val')
+        use_early_stopping = train_mode == 'best_val'
+        if train_mode not in {'best_val', 'fixed_epoch'}:
+            raise ValueError(f'Unsupported train_mode: {train_mode}')
+        early_stopping = EarlyStopping(patience=self.args.patience, verbose=True) if use_early_stopping else None
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
@@ -244,10 +248,14 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
-            early_stopping(vali_loss, self.model, path)
-            if early_stopping.early_stop:
-                print("Early stopping")
-                break
+            if use_early_stopping:
+                early_stopping(vali_loss, self.model, path)
+                if early_stopping.early_stop:
+                    print("Early stopping")
+                    break
+            else:
+                torch.save(self.model.state_dict(), os.path.join(path, 'checkpoint.pth'))
+                print("Fixed-epoch mode: checkpoint overwritten by current epoch")
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 

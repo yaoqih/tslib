@@ -2607,3 +2607,131 @@ aggregate 结果：
 4. `TimesNet sl20 + BCE(alpha=0.1)`
 
 其中第 1 条已经不是单纯研究想法，而是当前最值得进入“实盘前代理验证”的正式候选。
+
+## 1 Day 收口与最终实盘口径结论
+
+本轮 1 day 研究完成后，已将“研究最优”与“可实盘最优”明确分开，并统一到可交易收益率口径：
+
+- 目标收益定义保持为：
+  - `open_{t+2} / open_{t+1} - 1`
+- 继续剔除：
+  - 次日无法买入的涨停股
+- 所有最终比较均纳入：
+  - `low / base / high` 成本代理验证
+
+### 1. 统一候选版本矩阵
+
+为避免研究阶段混用不同 challenger/version，最终实盘矩阵只保留统一全年版本：
+
+- `WPMixer`
+- `TimeMixer`
+- `TimesNet`
+- `iTransformer`
+- `PatchTST`
+- `DLinear(a01)`
+
+对应冻结 manifest：
+
+- `logs/unified_live_matrix/unified_candidate_manifest.json`
+
+### 2. 统一实盘口径结果
+
+完整结果文件：
+
+- `logs/unified_live_matrix/unified_live_matrix.csv`
+- `logs/unified_live_matrix/unified_live_matrix_base_rank.csv`
+- `logs/unified_live_matrix/unified_live_matrix_gross_rank.csv`
+
+在 `base` 成本场景下，最终前排如下：
+
+| Rank | Strategy | Base Mean Return | Base Sharpe | Switch Count |
+| --- | --- | --- | --- | --- |
+| 1 | `wpmixer + timemixer + timesnet / zscore_mean` | `0.015757` | `0.786991` | `752` |
+| 2 | `wpmixer + timemixer + timesnet / mean` | `0.015719` | `0.785097` | `751` |
+| 3 | `wpmixer + timesnet / mean` | `0.015561` | `0.776631` | `940` |
+| 4 | `wpmixer + timesnet / top1_gap selector` | `0.014935` | `0.753720` | `1078` |
+| 5 | `patchtst + timesnet / gated_q50_left` | `0.014910` | `0.743551` | `734` |
+| 6 | `patchtst + timemixer / zscore_mean` | `0.014794` | `0.739953` | `458` |
+
+### 3. 与旧主线的关系
+
+此前研究主线 `iTransformer + PatchTST` 在统一实盘口径下仍然有效，但不再是第一：
+
+| Strategy | Base Mean Return | Base Sharpe |
+| --- | --- | --- |
+| `itransformer + patchtst / gated_q50_left` | `0.014527` | `0.727209` |
+| `itransformer + patchtst / top1_gap selector` | `0.013781` | `0.688935` |
+| `itransformer + patchtst / rank_mean` | `0.013352` | `0.720090` |
+
+结论：
+
+- `WPMixer` 是这轮 1 day 研究中最重要的新增有效模型
+- `TimeMixer` 与 `TimesNet` 单模不算最强，但作为辅助模型进入组合后，贡献明显
+- `iTransformer + PatchTST` 更适合保留为稳健旧主线备份，而非最终唯一主策略
+
+### 4. 最终实盘策略分层
+
+按照当前统一口径，冻结以下三层：
+
+1. 主策略：
+   - `primary_live_v1 = wpmixer + timemixer + timesnet / zscore_mean`
+2. 第一备份：
+   - `backup_live_v1 = wpmixer + timesnet / mean`
+3. 旧主线备份：
+   - `legacy_backup_v1 = itransformer + patchtst / gated_q50_left`
+
+对应冻结配置：
+
+- `configs/market_live_strategy.json`
+
+### 5. 自动切换规则
+
+本轮已新增最小自动切换机制，不再只停留在研究说明层：
+
+- 使用最近窗口 `lookback_days`
+- 场景固定为 `base cost`
+- 仅当 challenger 同时在：
+  - `mean_return`
+  - `sharpe`
+  两项上超过当前策略，并超过最小阈值时，才允许切换
+- 同时约束：
+  - `min_hold_days`
+
+当前规则已固化在：
+
+- `configs/market_live_strategy.json`
+- `scripts/market_daily/prod_select_strategy.py`
+
+### 6. 最小实盘闭环
+
+本轮已完成最小上线闭环实现，且不破坏研究环境：
+
+- 训练入口：
+  - `scripts/market_daily/prod_train.py`
+- 每日推理入口：
+  - `scripts/market_daily/prod_infer.py`
+- 自动策略选择：
+  - `scripts/market_daily/prod_select_strategy.py`
+- 准实盘回放：
+  - `scripts/market_daily/prod_replay.py`
+- 一键 bash：
+  - `scripts/market_daily/run_live_pipeline.sh`
+
+配套文档：
+
+- `docs/market_live_readme.md`
+- `docs/market_live_cron.template`
+
+### 7. 当前阶段判断
+
+经过这 1 day 收口后，研究阶段已经从“继续找 backbone”切换到“实盘工程化与稳定运行”阶段。
+
+当前再继续做大规模模型扩展的边际收益已经明显下降。
+接下来更高价值的是：
+
+1. 定期重训频率与上线调度固化
+2. 真正接入每日最新行情生产链
+3. 增加异常报警、失败重试、空信号处理
+4. 跑更长时间的准实盘顺序回放
+
+也就是说，本轮之后的重点已经不是“还能不能再找一个更强模型”，而是“如何把当前最优策略稳定、安全、可复现地运行起来”。
