@@ -1,0 +1,158 @@
+{
+  "itransformer": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_20_fsA_iTransformer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv"
+    }
+  },
+  "patchtst": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_60_fsA_PatchTST_market_daily_ftMS_sl60_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_round1_fsA_0/top1_predictions.csv"
+    }
+  },
+  "wpmixer": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_40_fsA_WPMixer_market_daily_ftMS_sl40_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebtimeF_dtTrue_market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv"
+    }
+  },
+  "timemixer": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_20_fsA_TimeMixer_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv"
+    }
+  },
+  "timesnet": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_20_fsA_TimesNet_market_daily_ftMS_sl20_ll0_pl1_dm128_nh4_el2_dl1_df256_expand2_dc4_fc3_ebfixed_dtTrue_market_round1_fsA_0/top1_predictions.csv"
+    }
+  },
+  "dlinear_a01": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "paths": {
+      "2015": "test_results/long_term_forecast_market_2015_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2016": "test_results/long_term_forecast_market_2016_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2017": "test_results/long_term_forecast_market_2017_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2018": "test_results/long_term_forecast_market_2018_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2019": "test_results/long_term_forecast_market_2019_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2020": "test_results/long_term_forecast_market_2020_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2021": "test_results/long_term_forecast_market_2021_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2022": "test_results/long_term_forecast_market_2022_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2023": "test_results/long_term_forecast_market_2023_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv",
+      "2024": "test_results/long_term_forecast_market_2024_120_fsA_DLinear_market_daily_ftMS_sl120_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_market_hbce_a01_fsA_0/top1_predictions.csv"
+    }
+  }
+}

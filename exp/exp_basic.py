@@ -51,10 +51,18 @@ class Exp_Basic(object):
 
     def _acquire_device(self):
         if self.args.use_gpu and self.args.gpu_type == 'cuda':
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(
-                self.args.gpu) if not self.args.use_multi_gpu else self.args.devices
-            device = torch.device('cuda:{}'.format(self.args.gpu))
-            print('Use GPU: cuda:{}'.format(self.args.gpu))
+            if self.args.use_multi_gpu:
+                os.environ["CUDA_VISIBLE_DEVICES"] = self.args.devices
+                device = torch.device('cuda:{}'.format(self.args.gpu))
+                print('Use GPU: cuda:{}'.format(self.args.gpu))
+            else:
+                visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+                if not visible_devices:
+                    os.environ["CUDA_VISIBLE_DEVICES"] = str(self.args.gpu)
+                # When a worker constrains visibility to a single GPU, the local
+                # ordinal inside the process is always cuda:0.
+                device = torch.device('cuda:0')
+                print('Use GPU: cuda:0')
         elif self.args.use_gpu and self.args.gpu_type == 'mps':
             device = torch.device('mps')
             print('Use GPU: mps')
@@ -109,4 +117,3 @@ class LazyModelDict(dict):
 
         self[key] = model_class
         return model_class
-

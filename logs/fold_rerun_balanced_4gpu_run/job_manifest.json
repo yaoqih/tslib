@@ -1,0 +1,422 @@
+[
+  {
+    "model": "TimesNet",
+    "fold_year": 2015,
+    "cost": 923.5522495416335,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2019,
+    "cost": 923.5522495416335,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2023,
+    "cost": 923.5522495416335,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2019,
+    "cost": 527.6552239914735,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2023,
+    "cost": 527.6552239914735,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2021,
+    "cost": 158.1343262479751,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2015,
+    "cost": 36.1252004613952,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2017,
+    "cost": 36.1252004613952,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2019,
+    "cost": 36.1252004613952,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2023,
+    "cost": 36.1252004613952,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2017,
+    "cost": 34.25701933799849,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2021,
+    "cost": 34.25701933799849,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2015,
+    "cost": 18.399584892574286,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2019,
+    "cost": 18.399584892574286,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2023,
+    "cost": 18.399584892574286,
+    "gpu": 0,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2016,
+    "cost": 923.5522495416335,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2020,
+    "cost": 923.5522495416335,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2024,
+    "cost": 923.5522495416335,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2020,
+    "cost": 527.6552239914735,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2024,
+    "cost": 527.6552239914735,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2022,
+    "cost": 158.1343262479751,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2016,
+    "cost": 36.1252004613952,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2018,
+    "cost": 36.1252004613952,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2020,
+    "cost": 36.1252004613952,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2024,
+    "cost": 36.1252004613952,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2018,
+    "cost": 34.25701933799849,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2022,
+    "cost": 34.25701933799849,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2016,
+    "cost": 18.399584892574286,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2020,
+    "cost": 18.399584892574286,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2024,
+    "cost": 18.399584892574286,
+    "gpu": 1,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2017,
+    "cost": 923.5522495416335,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2021,
+    "cost": 923.5522495416335,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2015,
+    "cost": 527.6552239914735,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2017,
+    "cost": 527.6552239914735,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2021,
+    "cost": 527.6552239914735,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2015,
+    "cost": 158.1343262479751,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2017,
+    "cost": 158.1343262479751,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2019,
+    "cost": 158.1343262479751,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2023,
+    "cost": 158.1343262479751,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2021,
+    "cost": 36.1252004613952,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2015,
+    "cost": 34.25701933799849,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2019,
+    "cost": 34.25701933799849,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2023,
+    "cost": 34.25701933799849,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2017,
+    "cost": 18.399584892574286,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2021,
+    "cost": 18.399584892574286,
+    "gpu": 2,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2018,
+    "cost": 923.5522495416335,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2022,
+    "cost": 923.5522495416335,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2016,
+    "cost": 527.6552239914735,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2018,
+    "cost": 527.6552239914735,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2022,
+    "cost": 527.6552239914735,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2016,
+    "cost": 158.1343262479751,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2018,
+    "cost": 158.1343262479751,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2020,
+    "cost": 158.1343262479751,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2024,
+    "cost": 158.1343262479751,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2022,
+    "cost": 36.1252004613952,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2016,
+    "cost": 34.25701933799849,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2020,
+    "cost": 34.25701933799849,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2024,
+    "cost": 34.25701933799849,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2018,
+    "cost": 18.399584892574286,
+    "gpu": 3,
+    "status": "pending"
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2022,
+    "cost": 18.399584892574286,
+    "gpu": 3,
+    "status": "pending"
+  }
+]

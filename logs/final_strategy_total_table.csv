@@ -1,0 +1,7 @@
+group,strategy,definition,num_days,mean_return,cumulative_return,sharpe,source
+replay_verify,legacy_backup_v1,itransformer + patchtst / gated_q50_left,160,0.05912946468267751,4.589438581745308,1.63664554642153,logs/market_live_prod/replay_verify/replay_summary.csv
+replay_verify,backup_live_v1,wpmixer + timesnet / mean,160,0.04359721161315592,-0.6678247607615612,1.1980534583059295,logs/market_live_prod/replay_verify/replay_summary.csv
+replay_verify,primary_live_v1,wpmixer + timemixer + timesnet / zscore_mean,160,0.042435612996006455,-0.740155064743806,1.1648407525584494,logs/market_live_prod/replay_verify/replay_summary.csv
+corrected_p1_doc,corrected_p1_winner,itransformer + patchtst / rank_mean,2340,0.013352,1.67538,0.72009,docs/2010_top1_quant_research_plan.md
+one_day_research_doc,primary_live_v1_doc,wpmixer + timemixer + timesnet / zscore_mean,752,0.015757,,0.786991,docs/2010_top1_quant_research_plan.md
+fixed_epoch_matrix,fixed_epoch_top1,tsmixer+timesnet::weighted_rank::{""dominant"": ""timesnet"", ""weights"": [0.4, 0.6]},2340,0.005804479043099215,-0.9731058724457776,0.5203651574517036,logs/final_unified_combo_matrix/unified_live_matrix_base_rank.csv

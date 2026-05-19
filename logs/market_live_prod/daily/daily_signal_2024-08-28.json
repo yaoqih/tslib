@@ -1,0 +1,127 @@
+{
+  "as_of_date": "2024-09-02",
+  "trade_date": "2024-08-28",
+  "fold_year": 2024,
+  "results": [
+    {
+      "strategy": "primary_live_v1",
+      "trade_date": "2024-08-28",
+      "code": "SH600198",
+      "pred": 15.634492671980274,
+      "expected_return": 0.14159292,
+      "live_proxy": {
+        "low": {
+          "num_days": 160,
+          "mean_return": 0.04259373429820229,
+          "cumulative_return": -0.733357637835367,
+          "sharpe": 1.1691959744366536,
+          "switch_count": 42,
+          "same_code_streak_days": 117,
+          "avg_entry_cost_bps": 1.34375,
+          "avg_exit_cost_bps": 2.6875
+        },
+        "base": {
+          "num_days": 160,
+          "mean_return": 0.042435612996006455,
+          "cumulative_return": -0.740155064743806,
+          "sharpe": 1.1648407525584494,
+          "switch_count": 42,
+          "same_code_streak_days": 117,
+          "avg_entry_cost_bps": 2.15,
+          "avg_exit_cost_bps": 3.49375
+        },
+        "high": {
+          "num_days": 160,
+          "mean_return": 0.04222481585590693,
+          "cumulative_return": -0.7489525427924013,
+          "sharpe": 1.1590345903541595,
+          "switch_count": 42,
+          "same_code_streak_days": 117,
+          "avg_entry_cost_bps": 3.225,
+          "avg_exit_cost_bps": 4.56875
+        }
+      },
+      "top20_csv": "logs/market_live_prod/daily/primary_live_v1_2024-08-28_top20.csv"
+    },
+    {
+      "strategy": "backup_live_v1",
+      "trade_date": "2024-08-28",
+      "code": "SH600198",
+      "pred": 0.45103854,
+      "expected_return": 0.14159292,
+      "live_proxy": {
+        "low": {
+          "num_days": 160,
+          "mean_return": 0.04382623756200585,
+          "cumulative_return": -0.6554305623065497,
+          "sharpe": 1.2043554532820944,
+          "switch_count": 60,
+          "same_code_streak_days": 99,
+          "avg_entry_cost_bps": 1.90625,
+          "avg_exit_cost_bps": 3.8125
+        },
+        "base": {
+          "num_days": 160,
+          "mean_return": 0.04359721161315592,
+          "cumulative_return": -0.6678247607615612,
+          "sharpe": 1.1980534583059295,
+          "switch_count": 60,
+          "same_code_streak_days": 99,
+          "avg_entry_cost_bps": 3.05,
+          "avg_exit_cost_bps": 4.95625
+        },
+        "high": {
+          "num_days": 160,
+          "mean_return": 0.043291891832605074,
+          "cumulative_return": -0.6836650632659382,
+          "sharpe": 1.1896519753457206,
+          "switch_count": 60,
+          "same_code_streak_days": 99,
+          "avg_entry_cost_bps": 4.575,
+          "avg_exit_cost_bps": 6.48125
+        }
+      },
+      "top20_csv": "logs/market_live_prod/daily/backup_live_v1_2024-08-28_top20.csv"
+    },
+    {
+      "strategy": "legacy_backup_v1",
+      "trade_date": "2024-08-28",
+      "code": "SH600198",
+      "pred": 0.59109837,
+      "expected_return": 0.14159292,
+      "live_proxy": {
+        "low": {
+          "num_days": 160,
+          "mean_return": 0.05936888312092366,
+          "cumulative_return": 4.801475967245179,
+          "sharpe": 1.6432742521339405,
+          "switch_count": 61,
+          "same_code_streak_days": 98,
+          "avg_entry_cost_bps": 1.9375,
+          "avg_exit_cost_bps": 3.875
+        },
+        "base": {
+          "num_days": 160,
+          "mean_return": 0.05912946468267751,
+          "cumulative_return": 4.589438581745308,
+          "sharpe": 1.63664554642153,
+          "switch_count": 61,
+          "same_code_streak_days": 98,
+          "avg_entry_cost_bps": 3.1,
+          "avg_exit_cost_bps": 5.0375
+        },
+        "high": {
+          "num_days": 160,
+          "mean_return": 0.05881030118088672,
+          "cumulative_return": 4.318635407742366,
+          "sharpe": 1.6278085084599458,
+          "switch_count": 61,
+          "same_code_streak_days": 98,
+          "avg_entry_cost_bps": 4.65,
+          "avg_exit_cost_bps": 6.5875
+        }
+      },
+      "top20_csv": "logs/market_live_prod/daily/legacy_backup_v1_2024-08-28_top20.csv"
+    }
+  ]
+}

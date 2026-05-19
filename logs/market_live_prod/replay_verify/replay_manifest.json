@@ -1,0 +1,10 @@
+{
+  "summary_csv": "logs/market_live_prod/replay_verify/replay_summary.csv",
+  "start_date": "2024-01-01",
+  "end_date": "2024-09-02",
+  "strategies": [
+    "primary_live_v1",
+    "backup_live_v1",
+    "legacy_backup_v1"
+  ]
+}

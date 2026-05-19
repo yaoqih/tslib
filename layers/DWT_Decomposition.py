@@ -42,12 +42,15 @@ class Decomposition(nn.Module):
         self.use_amp = use_amp
         self.eps = 1e-5
 
-        self.dwt = DWT1DForward(wave=self.wavelet_name, J=self.level,
-                                use_amp=self.use_amp).cuda() if self.device.type == 'cuda' else DWT1DForward(
-            wave=self.wavelet_name, J=self.level, use_amp=self.use_amp)
-        self.idwt = DWT1DInverse(wave=self.wavelet_name,
-                                 use_amp=self.use_amp).cuda() if self.device.type == 'cuda' else DWT1DInverse(
-            wave=self.wavelet_name, use_amp=self.use_amp)
+        self.dwt = DWT1DForward(
+            wave=self.wavelet_name,
+            J=self.level,
+            use_amp=self.use_amp,
+        ).to(self.device)
+        self.idwt = DWT1DInverse(
+            wave=self.wavelet_name,
+            use_amp=self.use_amp,
+        ).to(self.device)
 
         self.input_w_dim = self._dummy_forward(self.input_length) if not self.no_decomposition else [
             self.input_length]  # length of the input seq after decompose

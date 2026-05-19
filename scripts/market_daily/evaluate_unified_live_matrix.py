@@ -29,11 +29,12 @@ from utils.market_selector_audit import (  # noqa: E402
 
 
 MODEL_PATTERNS = {
-    "dlinear_a01": "test_results/long_term_forecast_market_*_120_fsA_DLinear_*market_hbce_a01_fsA_0/top1_predictions.csv",
+    "dlinear": "test_results/long_term_forecast_market_*_20_fsA_DLinear_*market_round1_fsA_0/top1_predictions.csv",
     "itransformer": "test_results/long_term_forecast_market_*_20_fsA_iTransformer_*market_round1_fsA_0/top1_predictions.csv",
-    "patchtst": "test_results/long_term_forecast_market_*_60_fsA_PatchTST_*market_round1_fsA_0/top1_predictions.csv",
+    "patchtst": "test_results/long_term_forecast_market_*_20_fsA_PatchTST_*market_round1_fsA_0/top1_predictions.csv",
     "timemixer": "test_results/long_term_forecast_market_*_20_fsA_TimeMixer_*market_round1_fsA_0/top1_predictions.csv",
     "timesnet": "test_results/long_term_forecast_market_*_20_fsA_TimesNet_*market_round1_fsA_0/top1_predictions.csv",
+    "tsmixer": "test_results/long_term_forecast_market_*_20_fsA_TSMixer_*market_round1_fsA_0/top1_predictions.csv",
     "wpmixer": "test_results/long_term_forecast_market_*_40_fsA_WPMixer_*market_fullroll_wpmixer_sl40_p16_lr3e4_0/top1_predictions.csv",
 }
 
@@ -54,7 +55,7 @@ def parse_args():
     parser.add_argument(
         "--models",
         type=str,
-        default="itransformer,patchtst,wpmixer,timemixer,timesnet,dlinear_a01",
+        default="tsmixer,timesnet,timemixer,itransformer,patchtst,dlinear",
     )
     parser.add_argument("--max_workers", type=int, default=12)
     parser.add_argument("--output_dir", type=str, default="logs/unified_live_matrix")

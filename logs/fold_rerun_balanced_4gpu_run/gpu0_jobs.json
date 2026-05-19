@@ -1,0 +1,77 @@
+[
+  {
+    "model": "TimesNet",
+    "fold_year": 2015,
+    "cost": 923.5522495416335
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2020,
+    "cost": 923.5522495416335
+  },
+  {
+    "model": "TimesNet",
+    "fold_year": 2018,
+    "cost": 923.5522495416335
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2015,
+    "cost": 527.6552239914735
+  },
+  {
+    "model": "TimeMixer",
+    "fold_year": 2018,
+    "cost": 527.6552239914735
+  },
+  {
+    "model": "PatchTST",
+    "fold_year": 2016,
+    "cost": 158.1343262479751
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2015,
+    "cost": 36.1252004613952
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2019,
+    "cost": 36.1252004613952
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2016,
+    "cost": 36.1252004613952
+  },
+  {
+    "model": "DLinear",
+    "fold_year": 2021,
+    "cost": 36.1252004613952
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2018,
+    "cost": 34.25701933799849
+  },
+  {
+    "model": "iTransformer",
+    "fold_year": 2023,
+    "cost": 34.25701933799849
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2015,
+    "cost": 18.399584892574286
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2020,
+    "cost": 18.399584892574286
+  },
+  {
+    "model": "TSMixer",
+    "fold_year": 2018,
+    "cost": 18.399584892574286
+  }
+]

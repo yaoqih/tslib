@@ -1,0 +1,45 @@
+{
+  "as_of_date": "2024-09-02",
+  "fold_year": 2024,
+  "scenario": "base",
+  "lookback_days": 60,
+  "ranking": [
+    {
+      "strategy": "legacy_backup_v1",
+      "num_days": 60,
+      "mean_return": 0.021918599853113046,
+      "cumulative_return": -0.11862625169510599,
+      "sharpe": 1.4696420240111658,
+      "switch_count": 35,
+      "same_code_streak_days": 24,
+      "avg_entry_cost_bps": 4.8,
+      "avg_exit_cost_bps": 7.8
+    },
+    {
+      "strategy": "primary_live_v1",
+      "num_days": 60,
+      "mean_return": 0.006227365296505355,
+      "cumulative_return": -0.7284749145594925,
+      "sharpe": 0.39392292274448454,
+      "switch_count": 22,
+      "same_code_streak_days": 37,
+      "avg_entry_cost_bps": 3.066666666666667,
+      "avg_exit_cost_bps": 4.983333333333333
+    },
+    {
+      "strategy": "backup_live_v1",
+      "num_days": 60,
+      "mean_return": 0.0035442336603598783,
+      "cumulative_return": -0.7768055236748594,
+      "sharpe": 0.22175152181239732,
+      "switch_count": 22,
+      "same_code_streak_days": 37,
+      "avg_entry_cost_bps": 3.066666666666667,
+      "avg_exit_cost_bps": 4.983333333333333
+    }
+  ],
+  "active_strategy": "legacy_backup_v1",
+  "previous_strategy": "legacy_backup_v1",
+  "active_since": "2024-09-02",
+  "switch_reason": "keep_current"
+}

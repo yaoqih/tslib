@@ -1,0 +1,10 @@
+strategy,scenario,num_days,mean_return,cumulative_return,sharpe,switch_count,same_code_streak_days,avg_entry_cost_bps,avg_exit_cost_bps,daily_csv
+legacy_backup_v1,base,160,0.05912946468267751,4.589438581745308,1.63664554642153,61,98,3.1,5.0375,logs/market_live_prod/replay_verify/legacy_backup_v1_daily.csv
+backup_live_v1,base,160,0.04359721161315592,-0.6678247607615612,1.1980534583059295,60,99,3.05,4.95625,logs/market_live_prod/replay_verify/backup_live_v1_daily.csv
+primary_live_v1,base,160,0.042435612996006455,-0.740155064743806,1.1648407525584494,42,117,2.15,3.49375,logs/market_live_prod/replay_verify/primary_live_v1_daily.csv
+legacy_backup_v1,high,160,0.05881030118088672,4.318635407742366,1.6278085084599458,61,98,4.65,6.5875,logs/market_live_prod/replay_verify/legacy_backup_v1_daily.csv
+backup_live_v1,high,160,0.043291891832605074,-0.6836650632659382,1.1896519753457206,60,99,4.575,6.48125,logs/market_live_prod/replay_verify/backup_live_v1_daily.csv
+primary_live_v1,high,160,0.04222481585590693,-0.7489525427924013,1.1590345903541595,42,117,3.225,4.56875,logs/market_live_prod/replay_verify/primary_live_v1_daily.csv
+legacy_backup_v1,low,160,0.05936888312092366,4.801475967245179,1.6432742521339405,61,98,1.9375,3.875,logs/market_live_prod/replay_verify/legacy_backup_v1_daily.csv
+backup_live_v1,low,160,0.04382623756200585,-0.6554305623065497,1.2043554532820944,60,99,1.90625,3.8125,logs/market_live_prod/replay_verify/backup_live_v1_daily.csv
+primary_live_v1,low,160,0.04259373429820229,-0.733357637835367,1.1691959744366536,42,117,1.34375,2.6875,logs/market_live_prod/replay_verify/primary_live_v1_daily.csv
