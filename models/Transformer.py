@@ -79,6 +79,11 @@ class Model(nn.Module):
         dec_out = self.decoder(dec_out, enc_out, x_mask=None, cross_mask=None)
         return dec_out
 
+    def encode_market_sequence(self, x_enc, x_mark_enc):
+        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out, _ = self.encoder(enc_out, attn_mask=None)
+        return enc_out
+
     def imputation(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask):
         # Embedding
         enc_out = self.enc_embedding(x_enc, x_mark_enc)

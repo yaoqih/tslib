@@ -1,0 +1,114 @@
+{
+  "days": 242,
+  "top1_mean": 0.05031485413966942,
+  "top1_std": 0.3288605481689304,
+  "top1_positive_rate": 0.6033057851239669,
+  "top3_mean": 0.025006243738884295,
+  "top5_mean": 0.018382793006082646,
+  "avg_regret": 0.21384967751322315,
+  "median_regret": 0.18293335114999998,
+  "avg_gap": 0.007580825082644626,
+  "avg_score_std": 0.004721314325154524,
+  "avg_max_prob": 0.0004226729945446026,
+  "avg_entropy": 7.809950362830603,
+  "unique_top1": 65,
+  "max_rep_top1": 46,
+  "top_pick_counts": [
+    {
+      "code": "SH600734",
+      "pick_count": 46
+    },
+    {
+      "code": "SH600198",
+      "pick_count": 20
+    },
+    {
+      "code": "SH600191",
+      "pick_count": 18
+    },
+    {
+      "code": "SH600766",
+      "pick_count": 13
+    },
+    {
+      "code": "SZ000792",
+      "pick_count": 13
+    },
+    {
+      "code": "SZ002265",
+      "pick_count": 8
+    },
+    {
+      "code": "SH600995",
+      "pick_count": 7
+    },
+    {
+      "code": "SH600744",
+      "pick_count": 5
+    },
+    {
+      "code": "SH600870",
+      "pick_count": 5
+    },
+    {
+      "code": "SZ000995",
+      "pick_count": 5
+    },
+    {
+      "code": "SZ002256",
+      "pick_count": 5
+    },
+    {
+      "code": "SH600078",
+      "pick_count": 4
+    },
+    {
+      "code": "SH600609",
+      "pick_count": 4
+    },
+    {
+      "code": "SH600683",
+      "pick_count": 4
+    },
+    {
+      "code": "SH603518",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ000007",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ000537",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ002280",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ002432",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ002772",
+      "pick_count": 4
+    }
+  ],
+  "raw_top1_mean": 0.05031485413966942,
+  "raw_top1_sharpe": 2.428760616874094,
+  "debias015_top1_mean": 0.017933838974504127,
+  "debias015_top1_sharpe": 1.620075883349758,
+  "hit_true10_rate": 0.128099173553719,
+  "hit_true20_rate": 0.18181818181818182,
+  "hit_true50_rate": 0.2975206611570248,
+  "avg_overlap_pred10_true10": 0.6446280991735537,
+  "avg_overlap_pred10_true20": 0.987603305785124,
+  "avg_overlap_pred10_true50": 1.8801652892561984,
+  "avg_overlap_pred20_true10": 0.9462809917355371,
+  "avg_overlap_pred20_true20": 1.4834710743801653,
+  "avg_overlap_pred20_true50": 2.8925619834710745,
+  "avg_overlap_pred50_true10": 1.5165289256198347,
+  "avg_overlap_pred50_true20": 2.5371900826446283,
+  "avg_overlap_pred50_true50": 5.235537190082645
+}

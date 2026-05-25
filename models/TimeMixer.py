@@ -377,6 +377,48 @@ class Model(nn.Module):
         dec_out = self.normalize_layers[0](dec_out, 'denorm')
         return dec_out
 
+    def encode_market_sequence(self, x_enc, x_mark_enc):
+        x_enc, x_mark_enc = self.__multi_scale_process_inputs(x_enc, x_mark_enc)
+
+        x_list = []
+        x_mark_list = []
+        if x_mark_enc is not None:
+            for i, x, x_mark in zip(range(len(x_enc)), x_enc, x_mark_enc):
+                B, T, N = x.size()
+                x = self.normalize_layers[i](x, 'norm')
+                if self.channel_independence:
+                    x = x.permute(0, 2, 1).contiguous().reshape(B * N, T, 1)
+                    x_mark = x_mark.repeat(N, 1, 1)
+                x_list.append(x)
+                x_mark_list.append(x_mark)
+        else:
+            for i, x in zip(range(len(x_enc)), x_enc):
+                B, T, N = x.size()
+                x = self.normalize_layers[i](x, 'norm')
+                if self.channel_independence:
+                    x = x.permute(0, 2, 1).contiguous().reshape(B * N, T, 1)
+                x_list.append(x)
+
+        enc_out_list = []
+        if x_mark_enc is not None:
+            for x, x_mark in zip(x_list, x_mark_list):
+                enc_out = self.enc_embedding(x, x_mark)
+                enc_out_list.append(enc_out)
+        else:
+            for x in x_list:
+                enc_out = self.enc_embedding(x, None)
+                enc_out_list.append(enc_out)
+
+        for i in range(self.layer):
+            enc_out_list = self.pdm_blocks[i](enc_out_list)
+
+        latent = enc_out_list[0]
+        if self.channel_independence:
+            bn = x_enc[0].shape[0]
+            channels = self.configs.enc_in
+            latent = latent.reshape(bn, channels, latent.shape[1], latent.shape[2]).mean(dim=1)
+        return latent
+
     def future_multi_mixing(self, B, enc_out_list, x_list):
         dec_out_list = []
         if self.channel_independence:

@@ -1,0 +1,2 @@
+year,model,top1_mean,top1_sharpe,unique,max_rep,debias015_top1_mean
+2021,TimesNet,0.006778731025826446,2.458572766119794,211,4,0.00686082382252066

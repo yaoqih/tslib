@@ -96,8 +96,20 @@ if __name__ == '__main__':
     parser.add_argument('--huber_delta', type=float, default=1.0, help='delta for Huber loss')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
     parser.add_argument('--train_mode', type=str, default='best_val',
-                        help='checkpoint selection mode: best_val or fixed_epoch')
+                        help='checkpoint selection mode: best_val, fixed_epoch, or train_loss_plateau')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
+    parser.add_argument('--train_plateau_patience', type=int, default=3, help='patience for train-loss plateau mode')
+    parser.add_argument('--train_plateau_delta', type=float, default=0.0, help='min improvement for train-loss plateau mode')
+    parser.add_argument('--train_plateau_ema_decay', type=float, default=0.7, help='EMA decay for train-loss plateau mode')
+    parser.add_argument('--train_plateau_metric', type=str, default='loss',
+                        help='monitor used by train_loss_plateau: loss, top1_return, topk_mean_return, or rank_ic')
+    parser.add_argument('--train_plateau_metric_k', type=int, default=3,
+                        help='top-k used when train_plateau_metric=topk_mean_return')
+    parser.add_argument('--stage2_epochs', type=int, default=0, help='extra finetune epochs after stage1')
+    parser.add_argument('--stage2_train_mode', type=str, default='fixed_epoch',
+                        help='checkpoint selection mode for stage2: best_val, fixed_epoch, or train_loss_plateau')
+    parser.add_argument('--stage2_train_plateau_metric', type=str, default='topk_mean_return',
+                        help='monitor used by stage2 train_loss_plateau when enabled')
 
     # GPU
     parser.add_argument('--use_gpu', action='store_true', default=True, help='use gpu (default: on)')
@@ -159,10 +171,26 @@ if __name__ == '__main__':
     parser.add_argument('--market_fold_year', type=int, default=2019, help='test year for rolling market fold')
     parser.add_argument('--market_test_end', type=str, default='', help='override test end date for market fold')
     parser.add_argument('--market_feature_set', type=str, default='A', help='market feature set id')
+    parser.add_argument('--market_aux_feature_set', type=str, default='B_MKT',
+                        help='market feature set id for auxiliary head')
+    parser.add_argument('--market_target_mode', type=str, default='raw',
+                        help='market regression target mode: raw or cross_section_rank')
+    parser.add_argument('--market_train_horizons', type=str, default='1,3,5',
+                        help='comma-separated market training horizons: 1 uses tradable open-open label, 3/5 use close-close labels')
+    parser.add_argument('--market_train_horizon_weights', type=str, default='2.0,0.25,0.25',
+                        help='comma-separated weights for market_train_horizons')
     parser.add_argument('--market_min_history', type=int, default=120, help='min listing history in trading days')
     parser.add_argument('--market_min_avg_amount', type=float, default=2e7, help='min 20d avg amount')
     parser.add_argument('--market_cache_path', type=str, default='./cache/market_daily_features.parquet',
                         help='cached feature parquet path')
+    parser.add_argument('--market_score_debias', type=str, default='none',
+                        help='prediction score debias method at evaluation time: none or expanding_mean')
+    parser.add_argument('--market_score_debias_strength', type=float, default=1.0,
+                        help='strength for evaluation-time score debias')
+    parser.add_argument('--market_eval_topk_list', type=str, default='1,3,5',
+                        help='comma-separated top-k basket sizes for market evaluation')
+    parser.add_argument('--market_cross_section_batches', action='store_true', default=False,
+                        help='group market_daily batches by date for cross-sectional training')
     parser.add_argument('--market_train_full_window', action='store_true', default=False,
                         help='expand market train split to include the original validation year')
     parser.add_argument('--market_aux_cls', action='store_true', default=False,
@@ -175,6 +203,68 @@ if __name__ == '__main__':
                         help='loss weight for pairwise rank loss')
     parser.add_argument('--market_rank_margin', type=float, default=0.0,
                         help='margin for pairwise rank loss')
+    parser.add_argument('--market_rank_min_target_gap', type=float, default=0.0,
+                        help='minimum target gap for same-day pairwise rank loss')
+    parser.add_argument('--market_topk_loss', action='store_true', default=False,
+                        help='enable top-focused listwise loss for same-day market ranking')
+    parser.add_argument('--market_topk_weight', type=float, default=0.0,
+                        help='loss weight for top-focused listwise loss')
+    parser.add_argument('--market_topk_k', type=int, default=3,
+                        help='top-k size for top-focused listwise loss')
+    parser.add_argument('--market_topk_temperature', type=float, default=1.0,
+                        help='temperature for top-focused listwise loss')
+    parser.add_argument('--market_topk_target_mode', type=str, default='soft',
+                        help='target mode for top-focused listwise loss: soft or hard')
+    parser.add_argument('--market_regression_use_tradable_mask', action='store_true', default=False,
+                        help='apply tradable mask to market regression loss in addition to rank/top-k losses')
+    parser.add_argument('--market_pred_topq_ratio', type=float, default=0.0,
+                        help='upweight the current predicted top-q fraction of stocks during training')
+    parser.add_argument('--market_pred_topq_weight', type=float, default=1.0,
+                        help='sample weight assigned to the current predicted top-q fraction')
+    parser.add_argument('--market_train_on_tradable_only', action='store_true', default=False,
+                        help='apply tradable mask to all market training losses when enabled')
+    parser.add_argument('--market_head_concentration_weight', type=float, default=0.0,
+                        help='loss weight for penalizing overly concentrated same-day score mass')
+    parser.add_argument('--market_head_concentration_temperature', type=float, default=1.0,
+                        help='temperature for same-day score softmax used by head concentration penalty')
+    parser.add_argument('--market_head_gap_weight', type=float, default=0.0,
+                        help='loss weight for penalizing overly large top1-vs-head score gap')
+    parser.add_argument('--market_head_gap_topk', type=int, default=3,
+                        help='head basket size used by the top-gap penalty')
+    parser.add_argument('--market_static_bias_weight', type=float, default=0.0,
+                        help='loss weight for no-state static-bias surrogate penalty')
+    parser.add_argument('--market_static_bias_topk', type=int, default=3,
+                        help='head basket size used by the no-state static-bias surrogate penalty')
+    parser.add_argument('--stage2_rank_weight', type=float, default=0.1,
+                        help='stage2 loss weight for pairwise rank loss')
+    parser.add_argument('--stage2_topk_weight', type=float, default=0.0,
+                        help='stage2 loss weight for top-focused listwise loss')
+    parser.add_argument('--stage2_topk_k', type=int, default=3,
+                        help='stage2 top-k size for top-focused listwise loss')
+    parser.add_argument('--stage2_topk_temperature', type=float, default=1.0,
+                        help='stage2 temperature for top-focused listwise loss')
+    parser.add_argument('--stage2_topk_target_mode', type=str, default='soft',
+                        help='stage2 target mode for top-focused listwise loss: soft or hard')
+    parser.add_argument('--stage2_head_concentration_weight', type=float, default=0.0,
+                        help='stage2 loss weight for same-day score concentration penalty')
+    parser.add_argument('--stage2_head_gap_weight', type=float, default=0.0,
+                        help='stage2 loss weight for same-day top1-vs-head gap penalty')
+    parser.add_argument('--stage2_head_concentration_temperature', type=float, default=1.0,
+                        help='stage2 temperature for same-day score concentration penalty')
+    parser.add_argument('--stage2_static_bias_weight', type=float, default=0.0,
+                        help='stage2 loss weight for no-state static-bias surrogate penalty')
+    parser.add_argument('--stage2_static_bias_topk', type=int, default=3,
+                        help='stage2 head basket size for no-state static-bias surrogate penalty')
+    parser.add_argument('--market_cs_layers', type=int, default=1,
+                        help='number of stock-axis self-attention layers for market cross-section model')
+    parser.add_argument('--market_cs_n_heads', type=int, default=4,
+                        help='number of stock-axis attention heads for market cross-section model')
+    parser.add_argument('--market_cs_d_ff', type=int, default=256,
+                        help='ffn width inside the market cross-section attention block')
+    parser.add_argument('--market_cs_dropout', type=float, default=0.1,
+                        help='dropout for the market cross-section attention block')
+    parser.add_argument('--market_cs_recent_k', type=int, default=5,
+                        help='number of recent latent tokens kept by the cross-section head')
 
     # TimeFilter
     parser.add_argument('--alpha', type=float, default=0.1, help='KNN for Graph Construction')

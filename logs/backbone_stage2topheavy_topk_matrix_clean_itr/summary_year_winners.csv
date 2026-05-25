@@ -1,0 +1,2 @@
+year,model,top1_mean,top1_sharpe,unique,max_rep,debias015_top1_mean
+2021,iTransformer,0.0038052410547933886,2.235856386915097,228,3,0.0037830501477685947

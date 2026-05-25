@@ -112,6 +112,19 @@ class Model(nn.Module):
                   (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
         return dec_out
 
+    def encode_market_sequence(self, x_enc, x_mark_enc):
+        means = x_enc.mean(1, keepdim=True).detach()
+        x_enc = x_enc - means
+        stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
+        x_enc /= stdev
+
+        x_enc = x_enc.permute(0, 2, 1)
+        enc_out, n_vars = self.patch_embedding(x_enc)
+        enc_out, attns = self.encoder(enc_out)
+        enc_out = torch.reshape(enc_out, (-1, n_vars, enc_out.shape[-2], enc_out.shape[-1]))
+        enc_out = enc_out.mean(dim=1)
+        return enc_out
+
     def imputation(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask):
         # Normalization from Non-stationary Transformer
         means = torch.sum(x_enc, dim=1) / torch.sum(mask == 1, dim=1)

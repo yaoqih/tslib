@@ -138,6 +138,14 @@ def build_run_command(config, model_key, fold_year, is_training, market_test_end
         command.extend(["--market_test_end", market_test_end])
     if model_cfg.get("use_amp", False):
         command.append("--use_amp")
+    for key, value in config.get("market_mainline_extra_args", {}).items():
+        flag = f"--{key}"
+        if value == "" or value is None or value is True:
+            command.append(flag)
+        elif value is False:
+            continue
+        else:
+            command.extend([flag, str(value)])
     for key, value in model_cfg.get("extra_args", {}).items():
         command.extend([f"--{key}", str(value)])
     return command

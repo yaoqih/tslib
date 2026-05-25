@@ -162,6 +162,15 @@ class ResolutionBranch(nn.Module):
         out = self.head(out)
         return out
 
+    def encode_sequence(self, x):
+        x_patch = self.do_patching(x)
+        x_patch = self.patch_norm(x_patch)
+        x_emb = self.dropoutLayer(self.patch_embedding_layer(x_patch))
+        out = self.mixer1(x_emb)
+        out = out + self.mixer2(out)
+        out = self.norm(out)
+        return out.mean(dim=1)
+
     def do_patching(self, x):
         x_end = x[:, :, -1:]
         x_padding = x_end.repeat(1, 1, self.patch_stride)
@@ -268,6 +277,11 @@ class WPMixerCore(nn.Module):
 
         return xT
 
+    def encode_market_sequence(self, xL):
+        x = xL.transpose(1, 2)
+        xA, xD = self.Decomposition_model.transform(x)
+        return self.resolutionBranch[0].encode_sequence(xA)
+
 
 class Model(nn.Module):
     def __init__(self, args, tfactor=5, dfactor=5, wavelet='db2', level=1, stride=8, no_decomposition=False):
@@ -305,6 +319,13 @@ class Model(nn.Module):
         dec_out = pred * (stdev[:, 0].unsqueeze(1).repeat(1, self.args.pred_len, 1))
         dec_out = dec_out + (means[:, 0].unsqueeze(1).repeat(1, self.args.pred_len, 1))
         return dec_out
+
+    def encode_market_sequence(self, x_enc, x_mark_enc):
+        means = x_enc.mean(1, keepdim=True).detach()
+        x_enc = x_enc - means
+        stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
+        x_enc /= stdev
+        return self.wpmixerCore.encode_market_sequence(x_enc)
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         if self.task_name == 'long_term_forecast' or self.task_name == 'short_term_forecast':

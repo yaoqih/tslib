@@ -1,0 +1,9 @@
+year,variant,top_codes
+2021,headreg_lossstop_fullyear,"[('SZ002801', 10), ('SH603377', 9), ('SH603501', 7), ('SZ002735', 6), ('SH603629', 6)]"
+2021,stage2topheavy_lossstop_fullyear,"[('SZ002801', 11), ('SH603976', 10), ('SH603377', 9), ('SH600593', 9), ('SZ002735', 8)]"
+2022,headreg_lossstop_fullyear,"[('SH600136', 19), ('SZ000835', 7), ('SH600145', 6), ('SH600139', 6), ('SH600260', 5)]"
+2022,stage2topheavy_lossstop_fullyear,"[('SH600136', 23), ('SH600139', 9), ('SH600145', 8), ('SZ002781', 8), ('SH600260', 7)]"
+2023,headreg_lossstop_fullyear,"[('SZ000889', 12), ('SZ000697', 10), ('SH600198', 8), ('SH600532', 7), ('SZ002723', 7)]"
+2023,stage2topheavy_lossstop_fullyear,"[('SH600666', 15), ('SZ000628', 10), ('SH603196', 8), ('SZ000752', 7), ('SH600589', 6)]"
+2024,headreg_lossstop_fullyear,"[('SZ000889', 9), ('SZ002089', 8), ('SH600198', 8), ('SZ000826', 7), ('SZ000816', 6)]"
+2024,stage2topheavy_lossstop_fullyear,"[('SZ000889', 9), ('SZ002089', 7), ('SH600052', 6), ('SZ000826', 6), ('SZ000632', 5)]"

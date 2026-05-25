@@ -9,10 +9,14 @@ https://github.com/Secure-and-Intelligent-Systems-Lab/WPMixer
 
 import torch
 import torch.nn as nn
-import pywt
 import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Function
+
+try:
+    import pywt
+except ImportError:  # pragma: no cover
+    pywt = None
 
 
 class Decomposition(nn.Module):
@@ -41,21 +45,28 @@ class Decomposition(nn.Module):
         self.no_decomposition = no_decomposition
         self.use_amp = use_amp
         self.eps = 1e-5
+        self._use_identity_decomposition = pywt is None or self.no_decomposition
 
-        self.dwt = DWT1DForward(
-            wave=self.wavelet_name,
-            J=self.level,
-            use_amp=self.use_amp,
-        ).to(self.device)
-        self.idwt = DWT1DInverse(
-            wave=self.wavelet_name,
-            use_amp=self.use_amp,
-        ).to(self.device)
-
-        self.input_w_dim = self._dummy_forward(self.input_length) if not self.no_decomposition else [
+        if self._use_identity_decomposition:
+            self.input_w_dim = [
             self.input_length]  # length of the input seq after decompose
-        self.pred_w_dim = self._dummy_forward(self.pred_length) if not self.no_decomposition else [
+            self.pred_w_dim = [
             self.pred_length]  # required length of the pred seq after decom
+            self.dwt = None
+            self.idwt = None
+        else:
+            self.dwt = DWT1DForward(
+                wave=self.wavelet_name,
+                J=self.level,
+                use_amp=self.use_amp,
+            ).to(self.device)
+            self.idwt = DWT1DInverse(
+                wave=self.wavelet_name,
+                use_amp=self.use_amp,
+            ).to(self.device)
+
+            self.input_w_dim = self._dummy_forward(self.input_length)
+            self.pred_w_dim = self._dummy_forward(self.pred_length)
 
         self.tfactor = tfactor
         self.dfactor = dfactor
@@ -68,20 +79,22 @@ class Decomposition(nn.Module):
 
     def transform(self, x):
         # input: x shape: batch, channel, seq
-        if not self.no_decomposition:
+        if not self._use_identity_decomposition:
             yl, yh = self._wavelet_decompose(x)
         else:
             yl, yh = x, []  # no decompose: returning the same value in yl
         return yl, yh
 
     def inv_transform(self, yl, yh):
-        if not self.no_decomposition:
+        if not self._use_identity_decomposition:
             x = self._wavelet_reverse_decompose(yl, yh)
         else:
             x = yl  # no decompose: returning the same value in x
         return x
 
     def _dummy_forward(self, input_length):
+        if self.dwt is None:
+            return [input_length]
         dummy_x = torch.ones((self.batch_size, self.channel, input_length)).to(self.device)
         yl, yh = self.dwt(dummy_x)
         l = []

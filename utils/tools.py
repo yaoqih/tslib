@@ -61,6 +61,62 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
 
+class TrainLossPlateauCheckpoint:
+    def __init__(
+        self,
+        patience=7,
+        verbose=False,
+        delta=0.0,
+        ema_decay=0.7,
+        mode='min',
+        metric_name='loss',
+    ):
+        if mode not in {'min', 'max'}:
+            raise ValueError(f"Unsupported plateau mode: {mode}")
+        self.patience = patience
+        self.verbose = verbose
+        self.delta = delta
+        self.ema_decay = ema_decay
+        self.mode = mode
+        self.metric_name = metric_name
+        self.counter = 0
+        self.early_stop = False
+        self.smoothed_loss = None
+        self.best_smoothed_loss = np.inf if mode == 'min' else -np.inf
+
+    def __call__(self, train_loss, model, path):
+        if self.smoothed_loss is None:
+            self.smoothed_loss = float(train_loss)
+        else:
+            self.smoothed_loss = (
+                self.ema_decay * self.smoothed_loss
+                + (1.0 - self.ema_decay) * float(train_loss)
+            )
+
+        if self.mode == 'min':
+            improved = self.smoothed_loss < (self.best_smoothed_loss - self.delta)
+        else:
+            improved = self.smoothed_loss > (self.best_smoothed_loss + self.delta)
+        if improved:
+            self.best_smoothed_loss = self.smoothed_loss
+            self.counter = 0
+            self.save_checkpoint(model, path)
+            return
+
+        self.counter += 1
+        print(f'TrainLossPlateau counter: {self.counter} out of {self.patience}')
+        if self.counter >= self.patience:
+            self.early_stop = True
+
+    def save_checkpoint(self, model, path):
+        if self.verbose:
+            print(
+                f'Train smoothed {self.metric_name} improved; saving model ... '
+                f'(best={self.best_smoothed_loss:.6f})'
+            )
+        torch.save(model.state_dict(), path + '/' + 'checkpoint.pth')
+
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get

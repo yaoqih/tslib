@@ -1,0 +1,427 @@
+group,year,model,top1_mean,top1_sharpe,top3_mean,top5_mean,ic,rank_ic,unique,max_rep,debias015_top1_mean,annual_cum_return
+baseline_before,2021,TimesNet,0.041298720857438,1.9691888083662437,0.0218515912588843,0.0154605469805041,0.0208702122246897,-0.0178588469802013,"<bound method Series.unique of year                                                                  2021
+model                                                             TimesNet
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.041299
+top1_sharpe                                                       1.969189
+top3_mean                                                         0.021852
+top5_mean                                                         0.015461
+ic                                                                 0.02087
+rank_ic                                                          -0.017859
+unique                                                                  20
+max_rep                                                                123
+debias015_top1_mean                                               0.043803
+debias015_top1_sharpe                                             2.092298
+num_days                                                               242
+Name: 0, dtype: object>",123,0.0438033504524793,4.965689965173187
+baseline_before,2021,TimeMixer,0.0389660358987603,1.8496377373251205,0.0182282052206611,0.0129209350378595,0.0068079913091531,-0.0387328235020871,"<bound method Series.unique of year                                                                  2021
+model                                                            TimeMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.038966
+top1_sharpe                                                       1.849638
+top3_mean                                                         0.018228
+top5_mean                                                         0.012921
+ic                                                                0.006808
+rank_ic                                                          -0.038733
+unique                                                                  11
+max_rep                                                                146
+debias015_top1_mean                                               0.037224
+debias015_top1_sharpe                                             1.780295
+num_days                                                               242
+Name: 1, dtype: object>",146,0.0372244702747933,1.9905497066487206
+baseline_before,2021,WPMixer,0.0386634464419834,1.8375781617087792,0.0174038108671625,0.0134471603067024,0.0066573137164863,-0.0384031954280518,"<bound method Series.unique of year                                                                  2021
+model                                                              WPMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.038663
+top1_sharpe                                                       1.837578
+top3_mean                                                         0.017404
+top5_mean                                                         0.013447
+ic                                                                0.006657
+rank_ic                                                          -0.038403
+unique                                                                  13
+max_rep                                                                146
+debias015_top1_mean                                               0.038324
+debias015_top1_sharpe                                             1.832492
+num_days                                                               242
+Name: 2, dtype: object>",146,0.0383244504049586,1.873409049867131
+baseline_before,2021,PatchTST,0.0374424276880165,1.7791544363827336,0.0177717462318181,0.0129384830797851,0.0071479261308836,-0.0380474308725549,"<bound method Series.unique of year                                                                  2021
+model                                                             PatchTST
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.037442
+top1_sharpe                                                       1.779154
+top3_mean                                                         0.017772
+top5_mean                                                         0.012938
+ic                                                                0.007148
+rank_ic                                                          -0.038047
+unique                                                                  11
+max_rep                                                                148
+debias015_top1_mean                                               0.038759
+debias015_top1_sharpe                                             1.858746
+num_days                                                               242
+Name: 3, dtype: object>",148,0.0387587475056198,1.146403832894126
+baseline_before,2021,iTransformer,0.0345794225785123,1.650211892877251,0.0173607416125068,0.011386340923595,0.0091726255551962,-0.0330994899627712,"<bound method Series.unique of year                                                                  2021
+model                                                         iTransformer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.034579
+top1_sharpe                                                       1.650212
+top3_mean                                                         0.017361
+top5_mean                                                         0.011386
+ic                                                                0.009173
+rank_ic                                                          -0.033099
+unique                                                                  17
+max_rep                                                                137
+debias015_top1_mean                                               0.038904
+debias015_top1_sharpe                                             1.885004
+num_days                                                               242
+Name: 4, dtype: object>",137,0.0389037253413223,0.18756885345478458
+baseline_before,2022,TimesNet,0.0029064805219917,0.6361206140026809,0.0025957147100968,0.0019582745976348,0.008761883400724,-0.0207878475686431,"<bound method Series.unique of year                                                                  2022
+model                                                             TimesNet
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.002906
+top1_sharpe                                                       0.636121
+top3_mean                                                         0.002596
+top5_mean                                                         0.001958
+ic                                                                0.008762
+rank_ic                                                          -0.020788
+unique                                                                  26
+max_rep                                                                 82
+debias015_top1_mean                                               0.004712
+debias015_top1_sharpe                                             1.006082
+num_days                                                               241
+Name: 5, dtype: object>",82,0.004711869759751,0.06767293451864598
+baseline_before,2022,iTransformer,-0.0005737658975103,-0.1200854754500254,0.000691825322863,-0.0011014606213775,-0.006082773696117,-0.0454804045963137,"<bound method Series.unique of year                                                                  2022
+model                                                         iTransformer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                        -0.000574
+top1_sharpe                                                      -0.120085
+top3_mean                                                         0.000692
+top5_mean                                                        -0.001101
+ic                                                               -0.006083
+rank_ic                                                           -0.04548
+unique                                                                  21
+max_rep                                                                 59
+debias015_top1_mean                                              -0.002605
+debias015_top1_sharpe                                            -0.522599
+num_days                                                               241
+Name: 6, dtype: object>",59,-0.0026052812302904,-0.5609410341598892
+baseline_before,2022,TimeMixer,-0.0030356947804979,-0.6189499316233965,-0.0030953779280359,-0.0021969004832531,-0.0107706667134396,-0.0522733523249135,"<bound method Series.unique of year                                                                  2022
+model                                                            TimeMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                        -0.003036
+top1_sharpe                                                       -0.61895
+top3_mean                                                        -0.003095
+top5_mean                                                        -0.002197
+ic                                                               -0.010771
+rank_ic                                                          -0.052273
+unique                                                                  16
+max_rep                                                                 61
+debias015_top1_mean                                              -0.001342
+debias015_top1_sharpe                                            -0.274709
+num_days                                                               241
+Name: 7, dtype: object>",61,-0.0013424091879668,-0.7639513775993274
+baseline_before,2022,WPMixer,-0.0081853472809128,-1.620830380432451,-0.0032518455731258,-0.002572903498307,-0.0113849686687228,-0.053294950370897,"<bound method Series.unique of year                                                                  2022
+model                                                              WPMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                        -0.008185
+top1_sharpe                                                       -1.62083
+top3_mean                                                        -0.003252
+top5_mean                                                        -0.002573
+ic                                                               -0.011385
+rank_ic                                                          -0.053295
+unique                                                                  15
+max_rep                                                                 68
+debias015_top1_mean                                              -0.002604
+debias015_top1_sharpe                                            -0.475801
+num_days                                                               241
+Name: 8, dtype: object>",68,-0.0026037424887966,-0.9359664750646071
+baseline_before,2022,PatchTST,-0.008317809353112,-1.6629638263016573,-0.0041576549768603,-0.0030852200698423,-0.0110658283998372,-0.0529207242809118,"<bound method Series.unique of year                                                                  2022
+model                                                             PatchTST
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                        -0.008318
+top1_sharpe                                                      -1.662964
+top3_mean                                                        -0.004158
+top5_mean                                                        -0.003085
+ic                                                               -0.011066
+rank_ic                                                          -0.052921
+unique                                                                  18
+max_rep                                                                 57
+debias015_top1_mean                                              -0.006252
+debias015_top1_sharpe                                             -1.18159
+num_days                                                               241
+Name: 9, dtype: object>",57,-0.0062520114705394,-0.9378301418546272
+baseline_before,2023,WPMixer,0.0103521274178423,1.804486557824193,0.0033445039324481,0.0026271540492614,-0.0125908028631779,-0.0610463192127325,"<bound method Series.unique of year                                                                  2023
+model                                                              WPMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.010352
+top1_sharpe                                                       1.804487
+top3_mean                                                         0.003345
+top5_mean                                                         0.002627
+ic                                                               -0.012591
+rank_ic                                                          -0.061046
+unique                                                                  15
+max_rep                                                                 95
+debias015_top1_mean                                               0.010357
+debias015_top1_sharpe                                             1.843897
+num_days                                                               241
+Name: 10, dtype: object>",95,0.0103574714473029,3.9551770117186864
+baseline_before,2023,PatchTST,0.0091349357568464,1.5849299373445005,0.0026588081493222,0.0025877928885145,-0.01239290904758,-0.0606811487087299,"<bound method Series.unique of year                                                                  2023
+model                                                             PatchTST
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.009135
+top1_sharpe                                                        1.58493
+top3_mean                                                         0.002659
+top5_mean                                                         0.002588
+ic                                                               -0.012393
+rank_ic                                                          -0.060681
+unique                                                                  16
+max_rep                                                                 88
+debias015_top1_mean                                               0.009733
+debias015_top1_sharpe                                             1.758444
+num_days                                                               241
+Name: 11, dtype: object>",88,0.0097332327294605,2.6709686545188855
+baseline_before,2023,TimeMixer,0.0087786653045643,1.5187156187124435,0.0025969627877178,0.0018547788726639,-0.012639308524069,-0.0609461844721846,"<bound method Series.unique of year                                                                  2023
+model                                                            TimeMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.008779
+top1_sharpe                                                       1.518716
+top3_mean                                                         0.002597
+top5_mean                                                         0.001855
+ic                                                               -0.012639
+rank_ic                                                          -0.060946
+unique                                                                  15
+max_rep                                                                 86
+debias015_top1_mean                                                0.01148
+debias015_top1_sharpe                                             2.049487
+num_days                                                               241
+Name: 12, dtype: object>",86,0.0114804535020746,2.350265309915539
+baseline_before,2023,TimesNet,0.0073560616917012,1.1109909033597645,0.0031970076777316,0.003227807172058,0.0022082096698787,-0.0318367364564642,"<bound method Series.unique of year                                                                  2023
+model                                                             TimesNet
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.007356
+top1_sharpe                                                       1.110991
+top3_mean                                                         0.003197
+top5_mean                                                         0.003228
+ic                                                                0.002208
+rank_ic                                                          -0.031837
+unique                                                                  17
+max_rep                                                                151
+debias015_top1_mean                                               0.007657
+debias015_top1_sharpe                                             1.172369
+num_days                                                               241
+Name: 13, dtype: object>",151,0.0076565049423236,0.7582447289862269
+baseline_before,2023,iTransformer,0.0065916376242323,0.8588136659879648,0.0055478502474965,0.0021666778183651,-0.0090380073664218,-0.0550917552481326,"<bound method Series.unique of year                                                                  2023
+model                                                         iTransformer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.006592
+top1_sharpe                                                       0.858814
+top3_mean                                                         0.005548
+top5_mean                                                         0.002167
+ic                                                               -0.009038
+rank_ic                                                          -0.055092
+unique                                                                  18
+max_rep                                                                 90
+debias015_top1_mean                                               0.005625
+debias015_top1_sharpe                                             0.888501
+num_days                                                               241
+Name: 14, dtype: object>",90,0.005625221199751,0.05736250682677824
+baseline_before,2024,WPMixer,0.0784076366514523,2.1633279058786297,0.0323303475672199,0.0217343832921991,0.0099122559403297,-0.0488917237966533,"<bound method Series.unique of year                                                                  2024
+model                                                              WPMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.078408
+top1_sharpe                                                       2.163328
+top3_mean                                                          0.03233
+top5_mean                                                         0.021734
+ic                                                                0.009912
+rank_ic                                                          -0.048892
+unique                                                                   8
+max_rep                                                                 77
+debias015_top1_mean                                               0.078851
+debias015_top1_sharpe                                             2.149628
+num_days                                                               241
+Name: 15, dtype: object>",77,0.0788505780348547,12.983341429035441
+baseline_before,2024,iTransformer,0.0779250826970954,2.137959824904926,0.0334505064991701,0.0211534169888464,0.0195042090886818,-0.0362593147433827,"<bound method Series.unique of year                                                                  2024
+model                                                         iTransformer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.077925
+top1_sharpe                                                        2.13796
+top3_mean                                                         0.033451
+top5_mean                                                         0.021153
+ic                                                                0.019504
+rank_ic                                                          -0.036259
+unique                                                                  12
+max_rep                                                                 78
+debias015_top1_mean                                                0.07769
+debias015_top1_sharpe                                             2.127877
+num_days                                                               241
+Name: 16, dtype: object>",78,0.0776901635402489,7.8116907333940375
+baseline_before,2024,PatchTST,0.0769300645435684,2.120126222476701,0.0336103318605809,0.0223672677305394,0.0094683968010978,-0.0478913790106569,"<bound method Series.unique of year                                                                  2024
+model                                                             PatchTST
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                          0.07693
+top1_sharpe                                                       2.120126
+top3_mean                                                          0.03361
+top5_mean                                                         0.022367
+ic                                                                0.009468
+rank_ic                                                          -0.047891
+unique                                                                   9
+max_rep                                                                 70
+debias015_top1_mean                                               0.077917
+debias015_top1_sharpe                                             2.122236
+num_days                                                               241
+Name: 17, dtype: object>",70,0.0779168605435684,7.679263402113913
+baseline_before,2024,TimeMixer,0.0735361672946058,2.0261932499385864,0.0315686866652835,0.0226538599221576,0.0102342547961967,-0.0487059938110265,"<bound method Series.unique of year                                                                  2024
+model                                                            TimeMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.073536
+top1_sharpe                                                       2.026193
+top3_mean                                                         0.031569
+top5_mean                                                         0.022654
+ic                                                                0.010234
+rank_ic                                                          -0.048706
+unique                                                                   9
+max_rep                                                                 66
+debias015_top1_mean                                               0.070839
+debias015_top1_sharpe                                             1.946999
+num_days                                                               241
+Name: 18, dtype: object>",66,0.0708388004456431,2.94945730077176
+baseline_before,2024,TimesNet,0.0598489812302904,1.73546081505278,0.0357733591869986,0.0246472404385892,0.0292356598279942,-0.0178064251848778,"<bound method Series.unique of year                                                                  2024
+model                                                             TimesNet
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.059849
+top1_sharpe                                                       1.735461
+top3_mean                                                         0.035773
+top5_mean                                                         0.024647
+ic                                                                0.029236
+rank_ic                                                          -0.017806
+unique                                                                  12
+max_rep                                                                 65
+debias015_top1_mean                                               0.064532
+debias015_top1_sharpe                                             1.864768
+num_days                                                               241
+Name: 19, dtype: object>",65,0.0645323601452282,-0.7783697484249692
+transformer_old_mainline,2021,Transformer_headreg,0.0020258901575619845,0.5032265847246916,0.005273055928305784,0.004205319919322314,0.014875849400301691,0.0218433384656157,95,30,0.0009861198622314058,0.012382962033215206
+transformer_old_mainline,2021,Transformer_stage2topheavy,-0.0013873894880165295,-0.4558086834722158,0.0025283808431129477,0.0033997518033801652,0.018303339100094674,0.03192940480114229,162,5,-0.0017170786855371894,-0.4693252305550828
+transformer_old_mainline,2021,Transformer_stage2topheavy_topk,0.012554832613636362,1.3814404810870629,0.011496116885055096,0.008340470801528926,0.01879958772356582,0.015642907902257024,113,28,0.009357398652066118,1.5080622656923994
+transformer_old_mainline,2022,Transformer_headreg,0.004012550952282158,1.1305076207090436,0.0019645583487966807,0.0004546378172448136,0.03699229836406124,0.04210592637261165,134,31,-3.728465477178374e-05,0.8075928376833428
+transformer_old_mainline,2022,Transformer_stage2topheavy,-0.0027533090101244805,-0.9460385454106538,0.0003727717439419087,0.00024999900726141065,0.04302879041934552,0.051360363166876866,172,10,-0.0036773333453941903,-0.6035473511575156
+transformer_old_mainline,2022,Transformer_stage2topheavy_topk,0.0005680313037344396,0.1269953480946315,0.0026471015958644544,0.0010250376834771784,0.03473768283549531,0.03493657052610826,94,35,-0.0013306810487551867,-0.38343143350350917
+transformer_old_mainline,2023,Transformer_headreg,0.004244654338464731,0.8903230549307185,0.0037848919200138306,0.0023253444502489623,0.025474811598003164,0.016498515494210452,110,22,0.0036321402141078836,0.5395372606180435
+transformer_old_mainline,2023,Transformer_stage2topheavy,0.005026286430954356,1.100648854543861,0.0007008841057399719,-0.0004898067216846473,0.02876943165070589,0.019625046416556966,159,13,0.007892669555020746,0.9596063961024777
+transformer_old_mainline,2023,Transformer_stage2topheavy_topk,0.004318215277178423,0.7669860133207942,0.002521466537621023,0.00111570917406639,0.019710536213785046,0.004244457250859666,93,51,0.005068987336514522,0.1793913720437319
+transformer_old_mainline,2024,Transformer_headreg,0.0012830052323651463,0.16795892014948707,0.004925119532448133,0.0064929399342406645,0.04528486068339969,0.042521463608074864,118,18,-0.004211275754356846,-0.8079585993244501
+transformer_old_mainline,2024,Transformer_stage2topheavy,0.0013341829400000018,0.1870613179427069,0.0007654383816597518,0.003444145626273859,0.050560251917845044,0.056788840133647524,143,15,0.0075383416034439845,-0.7650976632083515
+transformer_old_mainline,2024,Transformer_stage2topheavy_topk,0.006591191702738592,0.662014490965777,0.00869258477670816,0.012274140635925313,0.04633958316629337,0.04263680653367814,84,47,0.01019006688780083,-0.82571061343631
+modified_stage2topheavy_topk,2021,iTransformer,0.0038052410547933,2.235856386915097,0.0015813344618044,0.0004723815134876,0.0037818556657636,0.0069158450682318,"<bound method Series.unique of year                                                                  2021
+model                                                         iTransformer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.003805
+top1_sharpe                                                       2.235856
+top3_mean                                                         0.001581
+top5_mean                                                         0.000472
+ic                                                                0.003782
+rank_ic                                                           0.006916
+unique                                                                 228
+max_rep                                                                  3
+debias015_top1_mean                                               0.003783
+debias015_top1_sharpe                                             2.293411
+num_days                                                               242
+Name: 0, dtype: object>",3,0.0037830501477685,1.2993157857285191
+modified_stage2topheavy_topk,2021,TimesNet,0.0067787310258264,2.458572766119794,0.0052093520900826,0.0032064864432975,0.0090938397654901,0.0179452167138537,"<bound method Series.unique of year                                                                  2021
+model                                                             TimesNet
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                         0.006779
+top1_sharpe                                                       2.458573
+top3_mean                                                         0.005209
+top5_mean                                                         0.003206
+ic                                                                0.009094
+rank_ic                                                           0.017945
+unique                                                                 211
+max_rep                                                                  4
+debias015_top1_mean                                               0.006861
+debias015_top1_sharpe                                             2.432821
+num_days                                                               242
+Name: 0, dtype: object>",4,0.0068608238225206,3.0875427210159785
+modified_stage2topheavy_topk,2021,WPMixer,0.0002698812914876,0.1471424258143293,0.0004603135400413,0.0003365561722809,0.0078997585661059,0.0225605147750479,"<bound method Series.unique of year                                                                  2021
+model                                                              WPMixer
+feature_set                                                              A
+seq_len                                                                 20
+prediction_path          /huanghb28/aigc/cv_banc/zsw/zhuangcailin/proje...
+completed                                                             True
+top1_mean                                                          0.00027
+top1_sharpe                                                       0.147142
+top3_mean                                                          0.00046
+top5_mean                                                         0.000337
+ic                                                                  0.0079
+rank_ic                                                           0.022561
+unique                                                                 230
+max_rep                                                                  2
+debias015_top1_mean                                              -0.000804
+debias015_top1_sharpe                                            -0.442491
+num_days                                                               242
+Name: 1, dtype: object>",2,-0.0008037337791735,-0.03741881504214617

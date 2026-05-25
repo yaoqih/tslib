@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import glob
 import re
+import pyarrow
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
@@ -33,12 +34,26 @@ except ImportError:
 from utils.market_research import (
     evaluate_prediction_frame,
     get_feature_columns,
+    get_train_target_columns,
     make_time_features,
     prepare_market_dataframe,
 )
 warnings.filterwarnings('ignore')
 
 HUGGINGFACE_REPO = "thuml/Time-Series-Library"
+
+
+def _read_market_parquet_window(read_path, earliest_needed, latest_needed):
+    filters = [
+        ("date", ">=", earliest_needed.to_datetime64()),
+        ("date", "<=", latest_needed.to_datetime64()),
+    ]
+    try:
+        return pd.read_parquet(read_path, filters=filters)
+    except (pyarrow.lib.ArrowNotImplementedError, TypeError, ValueError):
+        frame = pd.read_parquet(read_path)
+        date_ts = pd.to_datetime(frame["date"])
+        return frame[(date_ts >= earliest_needed) & (date_ts <= latest_needed)].copy()
 
 class Dataset_ETT_hour(Dataset):
     def __init__(self, args, root_path, flag='train', size=None,
@@ -375,6 +390,16 @@ class Dataset_MarketDaily(Dataset):
         self.root_path = root_path
         self.data_path = data_path
         self.feature_columns = get_feature_columns(getattr(args, "market_feature_set", "A"))
+        self.use_aux_features = bool(getattr(args, "market_aux_cls", False))
+        self.aux_feature_columns = (
+            get_feature_columns(getattr(args, "market_aux_feature_set", "B_MKT"))
+            if self.use_aux_features
+            else []
+        )
+        self.target_mode = getattr(args, "market_target_mode", "raw")
+        self.train_target_columns = get_train_target_columns(
+            getattr(args, "market_train_horizons", "1,3,5")
+        )
         self.__read_data__()
 
     def __read_data__(self):
@@ -400,12 +425,10 @@ class Dataset_MarketDaily(Dataset):
         earliest_needed = pd.Timestamp(split_bounds["train"][0]) - pd.Timedelta(days=500)
         latest_needed = pd.Timestamp(split_bounds["test"][1])
         read_path = cache_path if cache_path and os.path.exists(cache_path) else local_path
-        frame = pd.read_parquet(
-            read_path,
-            filters=[
-                ("date", ">=", earliest_needed.strftime("%Y-%m-%d")),
-                ("date", "<=", latest_needed.strftime("%Y-%m-%d")),
-            ],
+        frame = _read_market_parquet_window(
+            read_path=read_path,
+            earliest_needed=earliest_needed,
+            latest_needed=latest_needed,
         )
         split_start, split_end = split_bounds[self.flag]
         frame = frame.copy()
@@ -414,23 +437,51 @@ class Dataset_MarketDaily(Dataset):
         train_mask = (frame["date_ts"] >= pd.Timestamp(split_bounds["train"][0])) & (
             frame["date_ts"] <= pd.Timestamp(split_bounds["train"][1])
         )
+        scale_target = self.scale and self.target_mode == "raw"
         self.feature_scaler = StandardScaler()
         self.target_scaler = StandardScaler()
         train_feature_matrix = frame.loc[train_mask, self.feature_columns].to_numpy(dtype=np.float32)
-        train_target_matrix = frame.loc[train_mask, [self.target]].to_numpy(dtype=np.float32)
+        train_aux_feature_matrix = (
+            frame.loc[train_mask, self.aux_feature_columns].to_numpy(dtype=np.float32)
+            if self.use_aux_features
+            else None
+        )
+        target_column = "label_cs_rank" if self.target_mode == "cross_section_rank" else self.target
+        train_target_matrix = frame.loc[train_mask, [target_column]].to_numpy(dtype=np.float32)
+        self.train_target_scalers = {}
+        for column in self.train_target_columns:
+            scaler = StandardScaler()
+            scaler.fit(frame.loc[train_mask, [column]].to_numpy(dtype=np.float32))
+            self.train_target_scalers[column] = scaler
         self.feature_scaler.fit(train_feature_matrix)
-        self.target_scaler.fit(train_target_matrix)
+        if self.use_aux_features:
+            self.aux_feature_scaler = StandardScaler()
+            self.aux_feature_scaler.fit(train_aux_feature_matrix)
+        if scale_target:
+            self.target_scaler.fit(train_target_matrix)
 
         input_feature_matrix = frame[self.feature_columns].to_numpy(dtype=np.float32)
         scaled_feature_matrix = self.feature_scaler.transform(input_feature_matrix) if self.scale else input_feature_matrix
+        aux_feature_matrix = None
+        if self.use_aux_features:
+            raw_aux_feature_matrix = frame[self.aux_feature_columns].to_numpy(dtype=np.float32)
+            aux_feature_matrix = (
+                self.aux_feature_scaler.transform(raw_aux_feature_matrix)
+                if self.scale
+                else raw_aux_feature_matrix
+            )
 
         target_matrix = np.zeros_like(scaled_feature_matrix, dtype=np.float32)
-        current_target = frame[[self.target]].to_numpy(dtype=np.float32)
-        if self.scale:
+        current_target = frame[[target_column]].to_numpy(dtype=np.float32)
+        if scale_target:
             current_target = self.target_scaler.transform(current_target)
         target_matrix[:, -1] = current_target.reshape(-1)
 
-        time_matrix = make_time_features(frame["date"])
+        time_matrix = make_time_features(
+            frame["date"],
+            freq=self.freq,
+            embed_type="timeF" if self.timeenc == 1 else "fixed",
+        )
 
         split_mask = (frame["date_ts"] >= pd.Timestamp(split_start)) & (frame["date_ts"] <= pd.Timestamp(split_end))
         sample_cache_path = self._sample_cache_path(fold_year)
@@ -467,7 +518,11 @@ class Dataset_MarketDaily(Dataset):
                         "y_end": candidate_positions + 1 - self.label_len + self.label_len + self.pred_len,
                         "code": code,
                         "date": frame.loc[candidate_positions, "date"].to_numpy(),
-                        "label": frame.loc[candidate_positions, self.target].to_numpy(dtype=np.float32),
+                        "label": frame.loc[candidate_positions, target_column].to_numpy(dtype=np.float32),
+                        "raw_label": frame.loc[candidate_positions, self.target].to_numpy(dtype=np.float32),
+                        "train_label": frame.loc[candidate_positions, target_column].to_numpy(dtype=np.float32),
+                        "label_close_3d": frame.loc[candidate_positions, "label_close_3d"].to_numpy(dtype=np.float32),
+                        "label_close_5d": frame.loc[candidate_positions, "label_close_5d"].to_numpy(dtype=np.float32),
                         "label_cls": frame.loc[candidate_positions, "label_cls"].to_numpy(dtype=np.float32),
                         "can_buy_on_next_open": frame.loc[
                             candidate_positions, "can_buy_on_next_open"
@@ -481,18 +536,44 @@ class Dataset_MarketDaily(Dataset):
                 self.sample_meta.to_parquet(sample_cache_path, index=False)
 
         self.feature_data = scaled_feature_matrix
+        self.aux_feature_data = aux_feature_matrix
         self.target_data = target_matrix
         self.time_data = time_matrix
         if not hasattr(self, "sample_meta"):
             self.sample_meta = pd.DataFrame(self.samples)
-        self.sample_cls_labels = self.sample_meta["label_cls"].to_numpy(dtype=np.float32)
+        self.sample_cls_labels = torch.from_numpy(
+            self.sample_meta["label_cls"].to_numpy(dtype=np.float32)
+        )
+        self.sample_tradable_mask = torch.from_numpy(
+            self.sample_meta["can_buy_on_next_open"].astype(bool).to_numpy()
+        )
+        self.sample_group_ids = torch.from_numpy(pd.factorize(self.sample_meta["date"])[0].astype(np.int64))
+        self.sample_train_targets_raw = torch.from_numpy(
+            self.sample_meta[self.train_target_columns].to_numpy(dtype=np.float32)
+        )
+        scaled_targets = []
+        for column in self.train_target_columns:
+            scaled_column = self.train_target_scalers[column].transform(
+                self.sample_meta[[column]].to_numpy(dtype=np.float32)
+            ).reshape(-1)
+            scaled_targets.append(scaled_column.astype(np.float32))
+        self.sample_train_targets_scaled = torch.from_numpy(np.stack(scaled_targets, axis=1))
 
     def _sample_cache_path(self, fold_year):
         cache_path = getattr(self.args, "market_cache_path", "")
         if not cache_path:
             return ""
         base, ext = os.path.splitext(cache_path)
-        return f"{base}.fold{fold_year}.{self.flag}.sl{self.seq_len}{ext}"
+        horizon_tag = str(getattr(self.args, "market_train_horizons", "1,3,5")).replace(",", "-")
+        market_test_end = (getattr(self.args, "market_test_end", "") or f"{fold_year}-12-31").replace("-", "")
+        start_year = str(getattr(self.args, "market_start_year", 2010))
+        full_window = "fw1" if getattr(self.args, "market_train_full_window", False) else "fw0"
+        min_history = f"hist{int(getattr(self.args, 'market_min_history', 120))}"
+        min_amount = f"amt{int(float(getattr(self.args, 'market_min_avg_amount', 2e7)))}"
+        return (
+            f"{base}.fold{fold_year}.{self.flag}.sl{self.seq_len}.{self.target_mode}."
+            f"mh{horizon_tag}.te{market_test_end}.sy{start_year}.{full_window}.{min_history}.{min_amount}{ext}"
+        )
 
     def _is_valid_sample_meta(self, sample_meta, frame):
         if sample_meta.empty:
@@ -500,6 +581,14 @@ class Dataset_MarketDaily(Dataset):
         if "can_buy_on_next_open" not in sample_meta.columns:
             return False
         if "label_cls" not in sample_meta.columns:
+            return False
+        if "raw_label" not in sample_meta.columns:
+            return False
+        if "train_label" not in sample_meta.columns:
+            return False
+        if "label_close_3d" not in sample_meta.columns:
+            return False
+        if "label_close_5d" not in sample_meta.columns:
             return False
         expected_y_len = self.label_len + self.pred_len
         if not ((sample_meta["x_end"] - sample_meta["x_start"]) == self.seq_len).all():
@@ -529,11 +618,21 @@ class Dataset_MarketDaily(Dataset):
         seq_y = np.ascontiguousarray(self.target_data[sample["y_start"]:sample["y_end"]], dtype=np.float32)
         seq_x_mark = np.ascontiguousarray(self.time_data[sample["x_start"]:sample["x_end"]], dtype=np.float32)
         seq_y_mark = np.ascontiguousarray(self.time_data[sample["y_start"]:sample["y_end"]], dtype=np.float32)
+        if self.aux_feature_data is not None:
+            aux_x = np.ascontiguousarray(self.aux_feature_data[sample["x_start"]:sample["x_end"]], dtype=np.float32)
+            return (
+                torch.from_numpy(seq_x),
+                torch.from_numpy(seq_y),
+                torch.from_numpy(seq_x_mark),
+                torch.from_numpy(seq_y_mark),
+                torch.from_numpy(aux_x),
+                index,
+            )
         return (
-            torch.tensor(seq_x, dtype=torch.float32),
-            torch.tensor(seq_y, dtype=torch.float32),
-            torch.tensor(seq_x_mark, dtype=torch.float32),
-            torch.tensor(seq_y_mark, dtype=torch.float32),
+            torch.from_numpy(seq_x),
+            torch.from_numpy(seq_y),
+            torch.from_numpy(seq_x_mark),
+            torch.from_numpy(seq_y_mark),
             index,
         )
 
@@ -543,22 +642,30 @@ class Dataset_MarketDaily(Dataset):
     def build_prediction_frame(self, sample_ids, preds, trues):
         meta = self.sample_meta.iloc[sample_ids].reset_index(drop=True)
         pred_values = preds.reshape(-1).astype(np.float32)
-        true_values = trues.reshape(-1).astype(np.float32)
-        if self.scale:
+        if self.scale and self.target_mode == "raw":
             pred_values = self.target_scaler.inverse_transform(pred_values.reshape(-1, 1)).reshape(-1)
-            true_values = self.target_scaler.inverse_transform(true_values.reshape(-1, 1)).reshape(-1)
         return pd.DataFrame(
             {
                 "date": meta["date"],
                 "code": meta["code"],
                 "pred": pred_values,
-                "true": true_values,
+                "true": meta["raw_label"].to_numpy(dtype=np.float32),
                 "tradable": meta["can_buy_on_next_open"].astype(bool).to_numpy(),
             }
         )
 
     def evaluate_predictions(self, prediction_frame):
-        return evaluate_prediction_frame(prediction_frame)
+        topk_list = tuple(
+            int(item.strip())
+            for item in str(getattr(self.args, "market_eval_topk_list", "1,3,5")).split(",")
+            if item.strip()
+        )
+        return evaluate_prediction_frame(
+            prediction_frame,
+            topk_list=topk_list,
+            score_debias=getattr(self.args, "market_score_debias", "none"),
+            score_debias_strength=float(getattr(self.args, "market_score_debias_strength", 1.0)),
+        )
 
 
 class Dataset_M4(Dataset):
