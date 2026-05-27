@@ -1,0 +1,127 @@
+{
+  "market_cc_mean": {
+    "median": 0.0006963317834142522,
+    "low": {
+      "num_days": 121,
+      "top1_mean_return": 0.010127044885123969,
+      "top3_mean_return": 0.009377836413774106,
+      "top5_mean_return": 0.006688481072231406,
+      "top10_mean_return": 0.0026994012033636364,
+      "top1_sharpe": 1.0352447271684955,
+      "top3_sharpe": 1.9864721041758469,
+      "top5_sharpe": 1.8922802447727263,
+      "top10_sharpe": 1.0351395624290345
+    },
+    "high": {
+      "num_days": 121,
+      "top1_mean_return": 0.003383179036115701,
+      "top3_mean_return": 0.00396042206768595,
+      "top5_mean_return": 0.0007884199399834713,
+      "top10_mean_return": 0.0008926399998677684,
+      "top1_sharpe": 0.45647649874189333,
+      "top3_sharpe": 0.9745352529050456,
+      "top5_sharpe": 0.26728055700389863,
+      "top10_sharpe": 0.4078781889039761
+    }
+  },
+  "market_cc_std": {
+    "median": 0.021800026277835206,
+    "low": {
+      "num_days": 121,
+      "top1_mean_return": 0.014511457539999998,
+      "top3_mean_return": 0.007375216964297521,
+      "top5_mean_return": 0.004134195465603304,
+      "top10_mean_return": 0.0010549789427024797,
+      "top1_sharpe": 1.5875469993447624,
+      "top3_sharpe": 1.8702992929276054,
+      "top5_sharpe": 1.5174270562487844,
+      "top10_sharpe": 0.5632703568460297
+    },
+    "high": {
+      "num_days": 121,
+      "top1_mean_return": -0.0010012336187603314,
+      "top3_mean_return": 0.005963041517162533,
+      "top5_mean_return": 0.003342705546611571,
+      "top10_mean_return": 0.002537062260528925,
+      "top1_sharpe": -0.12261172021976711,
+      "top3_sharpe": 1.2351864032490198,
+      "top5_sharpe": 0.8985321131724571,
+      "top10_sharpe": 0.8923077432929601
+    }
+  },
+  "market_amount_top10_share": {
+    "median": 0.7540060270343996,
+    "low": {
+      "num_days": 121,
+      "top1_mean_return": 0.005973521038842976,
+      "top3_mean_return": 0.0029052367250688685,
+      "top5_mean_return": 0.0017476017493719006,
+      "top10_mean_return": -0.00033014653088429764,
+      "top1_sharpe": 0.621868645623703,
+      "top3_sharpe": 0.7096833863441112,
+      "top5_sharpe": 0.5381344132723942,
+      "top10_sharpe": -0.13598106713881716
+    },
+    "high": {
+      "num_days": 121,
+      "top1_mean_return": 0.007536702882396695,
+      "top3_mean_return": 0.010433021756391185,
+      "top5_mean_return": 0.005729299262842976,
+      "top10_mean_return": 0.003922187734115703,
+      "top1_sharpe": 0.985901603815814,
+      "top3_sharpe": 2.2248777833609523,
+      "top5_sharpe": 1.7526482718975935,
+      "top10_sharpe": 1.6477560175183672
+    }
+  },
+  "market_amplitude_mean": {
+    "median": 3.2785519689020823,
+    "low": {
+      "num_days": 121,
+      "top1_mean_return": 0.011406002223471075,
+      "top3_mean_return": 0.0033317539689807158,
+      "top5_mean_return": 0.001063031262297521,
+      "top10_mean_return": -0.0015973630370165288,
+      "top1_sharpe": 1.2429875300385254,
+      "top3_sharpe": 0.852206977374818,
+      "top5_sharpe": 0.3653774804108709,
+      "top10_sharpe": -0.7310947997946944
+    },
+    "high": {
+      "num_days": 121,
+      "top1_mean_return": 0.0021042216977685954,
+      "top3_mean_return": 0.01000650451247934,
+      "top5_mean_return": 0.006413869749917356,
+      "top10_mean_return": 0.005189404240247931,
+      "top1_sharpe": 0.25835164168466745,
+      "top3_sharpe": 2.0647575618426446,
+      "top5_sharpe": 1.7967822551343635,
+      "top10_sharpe": 2.0001761646668688
+    }
+  },
+  "market_vol_20_mean": {
+    "median": 0.024491708288525503,
+    "low": {
+      "num_days": 121,
+      "top1_mean_return": -0.008067685926115701,
+      "top3_mean_return": -0.004789354048650138,
+      "top5_mean_return": -0.00487426483692562,
+      "top10_mean_return": -0.0052398023314214875,
+      "top1_sharpe": -0.8495628742964977,
+      "top3_sharpe": -1.2104525775080732,
+      "top5_sharpe": -1.6761935608556338,
+      "top10_sharpe": -2.4238850980192956
+    },
+    "high": {
+      "num_days": 121,
+      "top1_mean_return": 0.021577909847355373,
+      "top3_mean_return": 0.018127612530110186,
+      "top5_mean_return": 0.0123511658491405,
+      "top10_mean_return": 0.008831843534652892,
+      "top1_sharpe": 2.8142070576544747,
+      "top3_sharpe": 3.8506009456294326,
+      "top5_sharpe": 3.5333814656384597,
+      "top10_sharpe": 3.4560488830850016
+    }
+  }
+}

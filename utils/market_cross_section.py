@@ -36,7 +36,8 @@ class MarketCrossSectionModel(nn.Module):
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
         self.d_model = configs.d_model
-        self.recent_k = max(1, int(getattr(configs, "market_cs_recent_k", 5)))
+        configured_recent_k = int(getattr(configs, "market_cs_recent_k", 5))
+        self.recent_k = max(1, min(self.seq_len, configured_recent_k))
         if not hasattr(base_model, "encode_market_sequence"):
             raise ValueError(
                 f"{base_model.__class__.__name__} does not expose encode_market_sequence(x_enc, x_mark_enc); "
@@ -58,7 +59,7 @@ class MarketCrossSectionModel(nn.Module):
                 for _ in range(getattr(configs, "market_cs_layers", 1))
             ]
         )
-        self.head = nn.Sequential(
+        self.score_head = nn.Sequential(
             nn.Linear(self.recent_k * self.d_model * 2, self.d_model),
             nn.GELU(),
             nn.Dropout(getattr(configs, "market_cs_dropout", configs.dropout)),
@@ -85,7 +86,7 @@ class MarketCrossSectionModel(nn.Module):
         recent_cs_tokens = self._take_recent_tokens(cross_section_tokens)
         final_repr = torch.cat([recent_raw_tokens, recent_cs_tokens], dim=-1).reshape(latent_tokens.size(0), -1)
 
-        score = self.head(final_repr).unsqueeze(-1)
+        score = self.score_head(final_repr).unsqueeze(-1)
         return {
             "forecast": score,
             "backbone_latent": latent_tokens,

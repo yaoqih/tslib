@@ -1,0 +1,2 @@
+year,model,variant,score_name,guard_name,num_days,mean_return,cumulative_return,sharpe,switch_count,same_code_streak_days,avg_entry_cost_bps,avg_exit_cost_bps,strategy,state_column,bad_side,threshold,fallback,fallback_top_k
+2018,Transformer,single_head_csrank_topq_v1,style_neutral,plain_top1,242,0.009024736325000001,4.254463004224654,2.159510721349192,174,67,0.0,0.0,style_neutral:plain_top1,,,,,

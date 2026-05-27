@@ -14,21 +14,28 @@ from utils.dtw_metric import dtw, accelerated_dtw
 from utils.augmentation import run_augmentation, run_augmentation_single
 from utils.market_research import get_feature_columns
 from utils.market_multitask import (
+    build_head_union_mask,
+    build_local_knn_mask,
+    build_union_topq_weights,
     build_pred_topq_weights,
+    build_true_rank_sample_weights,
     combine_market_multitask_losses,
     compute_head_concentration_penalty,
     compute_head_gap_penalty,
     compute_masked_regression_loss,
     compute_masked_pairwise_rank_loss,
+    compute_weighted_masked_pairwise_rank_loss,
     compute_masked_topk_listwise_loss,
     compute_masked_topk_mean_return_proxy,
     compute_weighted_masked_regression_loss,
     compute_grouped_pairwise_rank_loss,
+    compute_local_neighbor_pairwise_rank_loss,
     compute_pairwise_rank_loss,
     compute_rank_ic,
     compute_static_bias_surrogate_penalty,
     compute_topk_mean_return_proxy,
     compute_topk_listwise_loss,
+    compute_winner_pairwise_rank_loss,
 )
 from utils.market_cross_section import MarketCrossSectionModel
 
@@ -372,8 +379,28 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             return float(epoch_metrics['monitor_rank_ic'])
         raise ValueError(f'Unsupported train_plateau_metric: {metric_name}')
 
-    def _compute_market_loss(self, outputs, batch_y, batch_meta, dataset, reg_criterion):
+    def _build_market_local_feature_tensor(self, batch_x, dataset):
+        if batch_x is None or not hasattr(dataset, "feature_columns"):
+            return None
+        feature_names = str(
+            getattr(
+                self.args,
+                "market_local_feature_names",
+                "log_amount,turnover_rate,amplitude,ret_20,vol_20",
+            )
+        )
+        selected_names = [item.strip() for item in feature_names.split(",") if item.strip()]
+        if not selected_names:
+            return None
+        column_index = {name: idx for idx, name in enumerate(dataset.feature_columns)}
+        feature_idx = [column_index[name] for name in selected_names if name in column_index]
+        if not feature_idx:
+            return None
+        return batch_x[:, -1, feature_idx]
+
+    def _compute_market_loss(self, outputs, batch_y, batch_meta, dataset, reg_criterion, batch_x=None):
         forecast, cls_logits = self._split_model_outputs(outputs)
+        loss_name = getattr(self.args, "loss", "MSE")
         f_dim = -1 if self.args.features == 'MS' else 0
         reg_pred = forecast[:, -self.args.pred_len:, f_dim:]
         reg_true = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
@@ -394,14 +421,40 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 topq_ratio=float(getattr(self.args, "market_pred_topq_ratio", 0.0)),
                 topq_weight=float(getattr(self.args, "market_pred_topq_weight", 1.0)),
             )
-            if getattr(dataset, "target_mode", "raw") == "cross_section_rank":
+            candidate_head_weights = build_union_topq_weights(
+                pred=pred_score.detach(),
+                target=raw_train_targets[:, 0].detach(),
+                tradable_mask=effective_tradable_mask,
+                topq_ratio=float(getattr(self.args, "market_head_candidate_ratio", 0.0)),
+                topq_weight=float(getattr(self.args, "market_head_candidate_weight", 1.0)),
+            )
+            pred_sample_weight = pred_topq_weights
+            rank_sample_weight = torch.maximum(pred_topq_weights, candidate_head_weights)
+            target_mode = getattr(dataset, "target_mode", "raw")
+            if target_mode == "cross_section_rank_weighted":
+                rank_target = self._build_cross_section_rank_target(raw_train_targets, tradable_mask=effective_tradable_mask)
+                true_rank_weights = build_true_rank_sample_weights(
+                    target=raw_train_targets[:, 0],
+                    alpha=float(getattr(self.args, "market_true_rank_alpha", 3.0)),
+                    power=float(getattr(self.args, "market_true_rank_power", 2.0)),
+                )
+                pred_loss = compute_weighted_masked_regression_loss(
+                    pred=pred_score,
+                    target=rank_target,
+                    tradable_mask=effective_tradable_mask,
+                    sample_weight=true_rank_weights,
+                    loss_name=loss_name,
+                    huber_delta=getattr(self.args, 'huber_delta', 1.0),
+                )
+                rank_sample_weight = true_rank_weights
+            elif target_mode == "cross_section_rank":
                 rank_target = self._build_cross_section_rank_target(raw_train_targets, tradable_mask=effective_tradable_mask)
                 pred_loss = compute_weighted_masked_regression_loss(
                     pred=pred_score,
                     target=rank_target,
                     tradable_mask=effective_tradable_mask,
-                    sample_weight=pred_topq_weights,
-                    loss_name=self.args.loss,
+                    sample_weight=pred_sample_weight,
+                    loss_name=loss_name,
                     huber_delta=getattr(self.args, 'huber_delta', 1.0),
                 )
             else:
@@ -413,8 +466,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                             pred=pred_score,
                             target=target_for_horizon,
                             tradable_mask=effective_tradable_mask if getattr(self.args, "market_regression_use_tradable_mask", False) or bool(getattr(self.args, "market_train_on_tradable_only", False)) else None,
-                            sample_weight=pred_topq_weights,
-                            loss_name=self.args.loss,
+                            sample_weight=pred_sample_weight,
+                            loss_name=loss_name,
                             huber_delta=getattr(self.args, 'huber_delta', 1.0),
                         )
                     )
@@ -429,12 +482,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         head_concentration_loss = pred_loss.new_tensor(0.0)
         head_gap_loss = pred_loss.new_tensor(0.0)
         static_bias_loss = pred_loss.new_tensor(0.0)
+        winner_loss = pred_loss.new_tensor(0.0)
+        local_loss = pred_loss.new_tensor(0.0)
         monitor_top1_return = pred_loss.new_tensor(0.0)
         monitor_topk_return = pred_loss.new_tensor(0.0)
         monitor_rank_ic = pred_loss.new_tensor(0.0)
         if self._use_market_rank_loss():
             if raw_train_targets is not None and horizon_weights is not None:
-                rank_target = self._build_composite_market_target(raw_train_targets, horizon_weights)
+                if getattr(dataset, "target_mode", "raw") == "cross_section_rank_weighted":
+                    rank_target = self._build_cross_section_rank_target(raw_train_targets, tradable_mask=effective_tradable_mask)
+                else:
+                    rank_target = self._build_composite_market_target(raw_train_targets, horizon_weights)
             else:
                 rank_target = reg_true.reshape(-1)
             cs_pred, cs_true = self._reshape_market_cross_section(
@@ -442,10 +500,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 rank_target.reshape(-1, 1, 1) if rank_target.ndim == 1 else reg_true,
             )
             if self._use_market_cross_section_batches():
-                rank_loss = compute_masked_pairwise_rank_loss(
+                rank_loss = compute_weighted_masked_pairwise_rank_loss(
                     pred=cs_pred.reshape(-1),
                     target=cs_true.reshape(-1),
                     tradable_mask=effective_tradable_mask,
+                    sample_weight=rank_sample_weight if raw_train_targets is not None else None,
                     margin=self.args.market_rank_margin,
                 )
             elif batch_meta is not None and hasattr(dataset, "sample_group_ids"):
@@ -463,10 +522,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     min_target_gap=getattr(self.args, "market_rank_min_target_gap", 0.0),
                 )
             else:
-                rank_loss = compute_masked_pairwise_rank_loss(
+                rank_loss = compute_weighted_masked_pairwise_rank_loss(
                     pred=reg_pred.reshape(-1),
                     target=reg_true.reshape(-1),
                     tradable_mask=effective_tradable_mask,
+                    sample_weight=rank_sample_weight if raw_train_targets is not None else None,
                     margin=self.args.market_rank_margin,
                 )
         if self._use_market_topk_loss():
@@ -512,13 +572,49 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 top_k=self._active_market_static_bias_topk(),
             )
             head_gap_loss = static_bias_loss
+            if bool(getattr(self.args, "market_winner_loss", False)):
+                candidate_mask = build_head_union_mask(
+                    pred=pred_score.detach(),
+                    target=tradable_target.detach(),
+                    tradable_mask=effective_tradable_mask,
+                    topq_ratio=float(getattr(self.args, "market_winner_topq_ratio", 0.2)),
+                )
+                winner_loss = compute_winner_pairwise_rank_loss(
+                    pred=pred_score,
+                    target=tradable_target,
+                    candidate_mask=candidate_mask,
+                    margin=float(getattr(self.args, "market_winner_margin", 0.0)),
+                    sample_weight=rank_sample_weight if raw_train_targets is not None else None,
+                    min_target_gap=float(getattr(self.args, "market_winner_min_target_gap", 0.0)),
+                )
+            if bool(getattr(self.args, "market_local_loss", False)):
+                local_features = self._build_market_local_feature_tensor(batch_x=batch_x, dataset=dataset)
+                if local_features is not None:
+                    neighbor_mask = build_local_knn_mask(
+                        features=local_features,
+                        tradable_mask=effective_tradable_mask,
+                        neighbor_k=int(getattr(self.args, "market_local_neighbor_k", 20)),
+                    )
+                    local_loss = compute_local_neighbor_pairwise_rank_loss(
+                        pred=pred_score,
+                        target=tradable_target,
+                        neighbor_mask=neighbor_mask,
+                        margin=float(getattr(self.args, "market_local_margin", 0.0)),
+                        sample_weight=rank_sample_weight if raw_train_targets is not None else None,
+                        min_target_gap=float(getattr(self.args, "market_local_min_target_gap", 0.0)),
+                    )
         total_loss = (
             pred_loss
             + self._active_market_rank_weight() * rank_loss
             + self._active_market_topk_weight() * topk_loss
             + self._active_market_head_concentration_weight() * head_concentration_loss
             + self._active_market_static_bias_weight() * static_bias_loss
+            + float(getattr(self.args, "market_winner_weight", 0.0)) * winner_loss
+            + float(getattr(self.args, "market_local_weight", 0.0)) * local_loss
         )
+        if raw_train_targets is not None and getattr(dataset, "target_mode", "raw") == "cross_section_rank_weighted":
+            aux_rank_reg_weight = float(getattr(self.args, "market_aux_rank_reg_weight", 0.1))
+            total_loss = rank_loss + aux_rank_reg_weight * pred_loss
 
         if not self._use_market_aux_cls():
             return {
@@ -530,6 +626,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 'head_concentration_loss': head_concentration_loss,
                 'head_gap_loss': head_gap_loss,
                 'static_bias_loss': static_bias_loss,
+                'winner_loss': winner_loss,
+                'local_loss': local_loss,
                 'reg_pred': reg_pred,
                 'reg_true': reg_true,
                 'monitor_top1_return': monitor_top1_return,
@@ -556,6 +654,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             'head_concentration_loss': head_concentration_loss,
             'head_gap_loss': head_gap_loss,
             'static_bias_loss': static_bias_loss,
+            'winner_loss': winner_loss,
+            'local_loss': local_loss,
             'reg_pred': reg_pred,
             'reg_true': reg_true,
             'monitor_top1_return': monitor_top1_return,
@@ -595,7 +695,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         outputs = self._forward_model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_aux_x)
                 else:
                     outputs = self._forward_model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_aux_x)
-                losses = self._compute_market_loss(outputs, batch_y, batch_meta, vali_data, criterion)
+                losses = self._compute_market_loss(outputs, batch_y, batch_meta, vali_data, criterion, batch_x=batch_x)
                 loss = losses['total_loss']
 
                 total_loss.append(loss.item())
@@ -674,11 +774,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         outputs = self._forward_model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_aux_x)
-                        losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion)
+                        losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion, batch_x=batch_x)
                         loss = losses['total_loss']
                 else:
                     outputs = self._forward_model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_aux_x)
-                    losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion)
+                    losses = self._compute_market_loss(outputs, batch_y, batch_meta, train_data, criterion, batch_x=batch_x)
                     loss = losses['total_loss']
 
                 train_loss.append(loss.item())

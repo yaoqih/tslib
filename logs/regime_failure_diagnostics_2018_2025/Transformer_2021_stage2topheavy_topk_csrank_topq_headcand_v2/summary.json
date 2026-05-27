@@ -1,0 +1,108 @@
+{
+  "days": 242,
+  "top1_mean": 0.04985762513719008,
+  "top1_std": 0.32902433130218456,
+  "top1_positive_rate": 0.6198347107438017,
+  "top3_mean": 0.023577453071763087,
+  "top5_mean": 0.01744857461850413,
+  "avg_regret": 0.21430690651570247,
+  "median_regret": 0.1833621803,
+  "avg_gap": 0.006641102768595042,
+  "avg_score_std": 0.004367298906272161,
+  "avg_max_prob": 0.000420690354800923,
+  "avg_entropy": 7.8099520438353585,
+  "unique_top1": 70,
+  "max_rep_top1": 41,
+  "top_pick_counts": [
+    {
+      "code": "SH600734",
+      "pick_count": 41
+    },
+    {
+      "code": "SH600198",
+      "pick_count": 24
+    },
+    {
+      "code": "SH600191",
+      "pick_count": 15
+    },
+    {
+      "code": "SH600766",
+      "pick_count": 12
+    },
+    {
+      "code": "SZ000792",
+      "pick_count": 12
+    },
+    {
+      "code": "SZ002265",
+      "pick_count": 8
+    },
+    {
+      "code": "SH600995",
+      "pick_count": 7
+    },
+    {
+      "code": "SZ002256",
+      "pick_count": 6
+    },
+    {
+      "code": "SH600078",
+      "pick_count": 5
+    },
+    {
+      "code": "SH600744",
+      "pick_count": 5
+    },
+    {
+      "code": "SH600870",
+      "pick_count": 5
+    },
+    {
+      "code": "SZ000007",
+      "pick_count": 5
+    },
+    {
+      "code": "SZ000537",
+      "pick_count": 5
+    },
+    {
+      "code": "SH600609",
+      "pick_count": 4
+    },
+    {
+      "code": "SH600683",
+      "pick_count": 4
+    },
+    {
+      "code": "SH603518",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ002096",
+      "pick_count": 4
+    },
+    {
+      "code": "SZ002432",
+      "pick_count": 4
+    },
+    {
+      "code": "SH600052",
+      "pick_count": 3
+    },
+    {
+      "code": "SH600112",
+      "pick_count": 3
+    }
+  ],
+  "raw_top1_mean": 0.04985762513719008,
+  "raw_top1_sharpe": 2.4054915917839,
+  "debias015_top1_mean": 0.01951835139971074,
+  "debias015_top1_sharpe": 1.76556689056305,
+  "hit_true10_rate": 0.11983471074380166,
+  "hit_true20_rate": 0.18181818181818182,
+  "avg_overlap_pred10_true10": 0.6322314049586777,
+  "avg_overlap_pred10_true20": 0.9669421487603306,
+  "avg_overlap_pred20_true10": 0.9256198347107438,
+  "avg_overlap_pred20_true20": 1.4545454545454546
+}

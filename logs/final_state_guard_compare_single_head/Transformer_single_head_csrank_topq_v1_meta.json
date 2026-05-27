@@ -1,0 +1,22 @@
+{
+  "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "model": "Transformer",
+  "variant": "single_head_csrank_topq_v1",
+  "baseline_amplitude_low_cash": {
+    "threshold": 3.095808,
+    "bad_side": "low"
+  },
+  "style_neutral_amountshare_low_cash": {
+    "threshold": 0.742913,
+    "bad_side": "low"
+  }
+}

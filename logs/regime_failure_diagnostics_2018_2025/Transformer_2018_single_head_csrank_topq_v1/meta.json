@@ -1,0 +1,28 @@
+{
+  "year": 2018,
+  "model": "Transformer",
+  "variant": "single_head_csrank_topq_v1",
+  "prediction_path": "/huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2/test_results/long_term_forecast_market_2018_single_head_csrank_topq_v1_Transformer_Transformer_market_daily_ftMS_sl20_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_single_head_csrank_topq_v1_0/top1_predictions.csv",
+  "cache_path": "/huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2/cache/market_daily_features_full2010.parquet",
+  "feature_columns": [
+    "log_amount",
+    "avg_amount_20",
+    "turnover_rate",
+    "avg_turnover_20",
+    "amplitude",
+    "avg_amplitude_20",
+    "ret_20",
+    "ret_60",
+    "vol_20",
+    "vol_60",
+    "market_cc_mean",
+    "market_amount_top10_share"
+  ],
+  "state_columns": [
+    "market_cc_mean",
+    "market_cc_std",
+    "market_amount_top10_share",
+    "market_amplitude_mean",
+    "market_vol_20_mean"
+  ]
+}

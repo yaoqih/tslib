@@ -2,6 +2,60 @@ import torch
 import torch.nn.functional as F
 
 
+def build_head_union_mask(pred, target, tradable_mask=None, topq_ratio=0.2):
+    pred = pred.reshape(-1)
+    target = target.reshape(-1).to(device=pred.device, dtype=torch.float32)
+    mask = torch.zeros_like(pred, dtype=torch.bool)
+    if pred.numel() == 0 or topq_ratio <= 0.0:
+        return mask
+
+    if tradable_mask is not None:
+        tradable_mask = tradable_mask.reshape(-1).to(dtype=torch.bool, device=pred.device)
+        active_idx = torch.nonzero(tradable_mask, as_tuple=False).reshape(-1)
+    else:
+        active_idx = torch.arange(pred.numel(), device=pred.device)
+    if active_idx.numel() == 0:
+        return mask
+
+    k = max(1, min(int(torch.ceil(torch.tensor(active_idx.numel() * float(topq_ratio), device=pred.device)).item()), int(active_idx.numel())))
+    active_pred = pred.index_select(0, active_idx)
+    active_target = target.index_select(0, active_idx)
+    pred_top_idx = active_idx.index_select(0, torch.topk(active_pred, k=k, largest=True).indices)
+    target_top_idx = active_idx.index_select(0, torch.topk(active_target, k=k, largest=True).indices)
+    union_idx = torch.unique(torch.cat([pred_top_idx, target_top_idx], dim=0), sorted=False)
+    mask.index_fill_(0, union_idx, True)
+    return mask
+
+
+def build_local_knn_mask(features, tradable_mask=None, neighbor_k=20):
+    features = features.reshape(features.shape[0], -1).to(dtype=torch.float32)
+    device = features.device
+    num_items = int(features.shape[0])
+    mask = torch.zeros((num_items, num_items), dtype=torch.bool, device=device)
+    if num_items <= 1 or neighbor_k <= 0:
+        return mask
+
+    if tradable_mask is not None:
+        tradable_mask = tradable_mask.reshape(-1).to(dtype=torch.bool, device=device)
+        active_idx = torch.nonzero(tradable_mask, as_tuple=False).reshape(-1)
+    else:
+        active_idx = torch.arange(num_items, device=device)
+    if active_idx.numel() <= 1:
+        return mask
+
+    active_features = features.index_select(0, active_idx)
+    distances = torch.cdist(active_features, active_features, p=2)
+    eye = torch.eye(active_idx.numel(), dtype=torch.bool, device=device)
+    distances = distances.masked_fill(eye, float("inf"))
+    k = max(1, min(int(neighbor_k), int(active_idx.numel() - 1)))
+    neighbor_local = torch.topk(distances, k=k, largest=False).indices
+    row_idx = active_idx.unsqueeze(1).expand(-1, k).reshape(-1)
+    col_idx = active_idx.index_select(0, neighbor_local.reshape(-1))
+    mask[row_idx, col_idx] = True
+    mask[col_idx, row_idx] = True
+    return mask
+
+
 def combine_market_multitask_losses(reg_loss, cls_loss, cls_weight):
     total_loss = reg_loss + cls_weight * cls_loss
     return {
@@ -82,6 +136,21 @@ def build_union_topq_weights(pred, target, tradable_mask=None, topq_ratio=0.2, t
     union_idx = torch.unique(torch.cat([pred_top_idx, target_top_idx], dim=0), sorted=False)
     weights.index_fill_(0, union_idx, float(topq_weight))
     return weights
+
+
+def build_true_rank_sample_weights(target, alpha=3.0, power=2.0):
+    target = target.reshape(-1).to(dtype=torch.float32)
+    weights = torch.ones_like(target, dtype=torch.float32)
+    if target.numel() == 0 or float(alpha) <= 0.0:
+        return weights
+
+    order = torch.argsort(target)
+    ranks = torch.empty_like(target, dtype=torch.float32)
+    if target.numel() == 1:
+        ranks.fill_(0.0)
+    else:
+        ranks[order] = torch.linspace(0.0, 1.0, steps=target.numel(), device=target.device)
+    return weights + float(alpha) * ranks.pow(float(power))
 
 
 def compute_masked_regression_loss(criterion, pred, target, tradable_mask=None):
@@ -178,6 +247,56 @@ def compute_grouped_pairwise_rank_loss(pred, target, group_ids, margin=0.0, min_
     if losses.numel() == 0:
         return pred.new_tensor(0.0)
     return losses.mean()
+
+
+def compute_winner_pairwise_rank_loss(pred, target, candidate_mask=None, margin=0.0, sample_weight=None, min_target_gap=0.0):
+    pred, sample_weight = _apply_mask_pair(pred, candidate_mask, sample_weight=sample_weight)
+    target, _ = _apply_mask_pair(target, candidate_mask, sample_weight=None)
+    if pred.numel() <= 1:
+        return pred.new_tensor(0.0)
+
+    target_diff = target.unsqueeze(1) - target.unsqueeze(0)
+    pair_mask = target_diff > float(min_target_gap)
+    if not torch.any(pair_mask):
+        return pred.new_tensor(0.0)
+
+    pred_diff = pred.unsqueeze(1) - pred.unsqueeze(0)
+    losses = F.relu(float(margin) - pred_diff)
+    if sample_weight is None:
+        selected = losses[pair_mask]
+        return selected.mean() if selected.numel() > 0 else pred.new_tensor(0.0)
+
+    pair_weight = 0.5 * (sample_weight.unsqueeze(1) + sample_weight.unsqueeze(0))
+    selected_losses = losses[pair_mask]
+    selected_weights = pair_weight[pair_mask]
+    denom = selected_weights.sum().clamp_min(1e-12)
+    return (selected_losses * selected_weights).sum() / denom
+
+
+def compute_local_neighbor_pairwise_rank_loss(pred, target, neighbor_mask, margin=0.0, sample_weight=None, min_target_gap=0.0):
+    pred = pred.reshape(-1)
+    target = target.reshape(-1)
+    neighbor_mask = neighbor_mask.to(dtype=torch.bool, device=pred.device)
+    if pred.numel() <= 1 or neighbor_mask.numel() == 0:
+        return pred.new_tensor(0.0)
+
+    target_diff = target.unsqueeze(1) - target.unsqueeze(0)
+    pair_mask = neighbor_mask & (target_diff > float(min_target_gap))
+    if not torch.any(pair_mask):
+        return pred.new_tensor(0.0)
+
+    pred_diff = pred.unsqueeze(1) - pred.unsqueeze(0)
+    losses = F.relu(float(margin) - pred_diff)
+    if sample_weight is None:
+        selected = losses[pair_mask]
+        return selected.mean() if selected.numel() > 0 else pred.new_tensor(0.0)
+
+    sample_weight = sample_weight.reshape(-1).to(device=pred.device, dtype=torch.float32)
+    pair_weight = 0.5 * (sample_weight.unsqueeze(1) + sample_weight.unsqueeze(0))
+    selected_losses = losses[pair_mask]
+    selected_weights = pair_weight[pair_mask]
+    denom = selected_weights.sum().clamp_min(1e-12)
+    return (selected_losses * selected_weights).sum() / denom
 
 
 def _compute_unit_interval_ranks(values):

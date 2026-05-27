@@ -1,0 +1,18 @@
+{
+  "year": 2021,
+  "model": "Transformer",
+  "variant": "single_head_csrank_topq_v1",
+  "prediction_path": "/huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2/test_results/long_term_forecast_market_2021_single_head_csrank_topq_v1_Transformer_Transformer_market_daily_ftMS_sl20_ll0_pl1_dm64_nh4_el2_dl1_df128_expand2_dc4_fc3_ebtimeF_dtTrue_single_head_csrank_topq_v1_0/top1_predictions.csv",
+  "cache_path": "/huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2/cache/market_daily_features_full2010.parquet",
+  "feature_columns": [
+    "log_amount",
+    "turnover_rate",
+    "amplitude",
+    "ret_20",
+    "vol_20"
+  ],
+  "state_column": "market_cc_std",
+  "state_quantile": 0.8,
+  "state_threshold": 0.028898019361916223,
+  "summary_path": "/huanghb28/aigc/cv_banc/zsw/zhuangcailin/project/Time-Series-Library2/logs/residual_gating_eval/Transformer_2021_single_head_csrank_topq_v1/summary.csv"
+}

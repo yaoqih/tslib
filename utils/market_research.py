@@ -530,6 +530,92 @@ def evaluate_topk_returns(prediction_frame, top_k=1):
     }
 
 
+def evaluate_topk_rollover_returns(prediction_frame, top_k=3):
+    if prediction_frame.empty:
+        return {
+            "num_days": 0,
+            "mean_return": 0.0,
+            "cumulative_return": 0.0,
+            "sharpe": 0.0,
+            "positive_rate": 0.0,
+        }
+
+    daily_returns = []
+    for _, daily in prediction_frame.groupby("date", sort=True):
+        ranked = daily.sort_values("pred", ascending=False).head(int(top_k))
+        if "tradable" in ranked.columns:
+            ranked = ranked[ranked["tradable"]].copy()
+        if ranked.empty:
+            daily_returns.append(0.0)
+        else:
+            daily_returns.append(float(ranked.iloc[0]["true"]))
+
+    daily = pd.Series(daily_returns, dtype=np.float64)
+    mean_return = float(daily.mean()) if not daily.empty else 0.0
+    std_return = float(daily.std(ddof=0)) if daily.shape[0] > 1 else 0.0
+    sharpe = 0.0 if std_return == 0 else (mean_return / std_return) * math.sqrt(252)
+    cumulative_return = float((1.0 + daily).prod() - 1.0) if not daily.empty else 0.0
+    return {
+        "num_days": int(daily.shape[0]),
+        "mean_return": mean_return,
+        "cumulative_return": cumulative_return,
+        "sharpe": sharpe,
+        "positive_rate": float((daily > 0).mean()) if not daily.empty else 0.0,
+    }
+
+
+def residualize_prediction_scores(prediction_frame, feature_frame, feature_columns):
+    if prediction_frame.empty:
+        frame = prediction_frame.copy()
+        frame["pred_resid"] = pd.Series(dtype=np.float64)
+        return frame
+
+    merged = prediction_frame.merge(
+        feature_frame[["date", "code", *feature_columns]],
+        on=["date", "code"],
+        how="left",
+    ).copy()
+    residual_parts = []
+    for _, daily in merged.groupby("date", sort=False):
+        current = daily.copy()
+        valid = current[list(feature_columns)].notna().all(axis=1)
+        current["pred_resid"] = current["pred"].astype(np.float64)
+        if valid.sum() >= (len(feature_columns) + 1):
+            x = current.loc[valid, list(feature_columns)].to_numpy(dtype=np.float64)
+            x = np.column_stack([np.ones(x.shape[0], dtype=np.float64), x])
+            y = current.loc[valid, "pred"].to_numpy(dtype=np.float64)
+            beta, _, _, _ = np.linalg.lstsq(x, y, rcond=None)
+            fitted = x @ beta
+            current.loc[valid, "pred_resid"] = y - fitted
+        residual_parts.append(current)
+    return pd.concat(residual_parts, ignore_index=True)
+
+
+def _build_yearly_topk_metrics(scored_frame, topk_list):
+    if scored_frame.empty:
+        return []
+
+    dated = scored_frame.copy()
+    dated["year"] = pd.to_datetime(dated["date"]).dt.year.astype(int)
+    yearly_rows = []
+    for year, year_frame in dated.groupby("year", sort=True):
+        row = {"year": int(year)}
+        for top_k in tuple(topk_list):
+            basket_metrics = evaluate_topk_returns(year_frame, top_k=top_k)
+            daily_ranked = year_frame.sort_values(["date", "pred"], ascending=[True, False])
+            if "tradable" in daily_ranked.columns:
+                daily_ranked = daily_ranked[daily_ranked["tradable"]].copy()
+            daily_top = daily_ranked.groupby("date").head(top_k).copy() if not daily_ranked.empty else daily_ranked
+            daily_returns = daily_top.groupby("date")["true"].mean() if not daily_top.empty else pd.Series(dtype=np.float64)
+            row[f"top{top_k}_num_days"] = int(basket_metrics["num_days"])
+            row[f"top{top_k}_mean_return"] = float(basket_metrics["mean_return"])
+            row[f"top{top_k}_cumulative_return"] = float(basket_metrics["cumulative_return"])
+            row[f"top{top_k}_sharpe"] = float(basket_metrics["sharpe"])
+            row[f"top{top_k}_positive_rate"] = float((daily_returns > 0).mean()) if not daily_returns.empty else 0.0
+        yearly_rows.append(row)
+    return yearly_rows
+
+
 def evaluate_prediction_frame(prediction_frame, topk_list=(1,), score_debias="none", score_debias_strength=1.0):
     scored_frame = apply_static_score_debias(
         prediction_frame,
@@ -560,6 +646,7 @@ def evaluate_prediction_frame(prediction_frame, topk_list=(1,), score_debias="no
         metrics[f"top{top_k}_sharpe"] = basket_metrics["sharpe"]
         metrics[f"top{top_k}_num_days"] = basket_metrics["num_days"]
 
+    metrics["yearly_metrics"] = _build_yearly_topk_metrics(scored_frame, topk_list=topk_list)
     return metrics
 
 
@@ -828,6 +915,81 @@ def build_head_candidate_diagnostics(
         "summary": summary,
         "daily": daily_rows,
     }
+
+
+def build_monthly_head_diagnostics(daily_rows):
+    if not daily_rows:
+        return pd.DataFrame(
+            columns=["month", "top1_mean", "top3_mean", "top5_mean", "hit20", "regret", "max_prob"]
+        )
+
+    daily_frame = pd.DataFrame(daily_rows).copy()
+    daily_frame["month"] = pd.to_datetime(daily_frame["date"]).dt.to_period("M").astype(str)
+    return (
+        daily_frame.groupby("month", sort=True)
+        .agg(
+            top1_mean=("top1_true", "mean"),
+            top3_mean=("top3_mean", "mean"),
+            top5_mean=("top5_mean", "mean"),
+            hit20=("hit_top1_in_true20", "mean"),
+            regret=("regret_vs_best_tradable", "mean"),
+            max_prob=("score_max_prob", "mean"),
+        )
+        .reset_index()
+    )
+
+
+def build_top_pick_feature_profile(prediction_frame, feature_frame, feature_columns, top_n=20):
+    if prediction_frame.empty:
+        return pd.DataFrame(columns=["code", "pick_count", "mean_true", "positive_rate"])
+
+    ranked = prediction_frame.sort_values(["date", "pred"], ascending=[True, False]).copy()
+    if "tradable" in ranked.columns:
+        ranked = ranked[ranked["tradable"]].copy()
+    top1 = ranked.groupby("date", sort=True).head(1)[["date", "code", "true"]].copy()
+    if top1.empty:
+        return pd.DataFrame(columns=["code", "pick_count", "mean_true", "positive_rate"])
+
+    merged = top1.merge(feature_frame[["date", "code", *feature_columns]], on=["date", "code"], how="left")
+    return (
+        merged.groupby("code", sort=False)
+        .agg(
+            pick_count=("date", "size"),
+            mean_true=("true", "mean"),
+            positive_rate=("true", lambda s: float((s > 0).mean())),
+            **{f"mean_{column}": (column, "mean") for column in feature_columns},
+        )
+        .reset_index()
+        .sort_values(["pick_count", "code"], ascending=[False, True])
+        .head(int(top_n))
+        .reset_index(drop=True)
+    )
+
+
+def build_state_slice_diagnostics(prediction_frame, state_columns, topk_list=(1, 3, 5)):
+    if prediction_frame.empty:
+        return {}
+
+    daily_state = prediction_frame.groupby("date", sort=True).agg({column: "mean" for column in state_columns}).reset_index()
+    diagnostics = {}
+    for column in state_columns:
+        if column not in daily_state.columns:
+            continue
+        threshold = float(daily_state[column].median())
+        diagnostics[column] = {"median": threshold}
+        for slice_name, mask in (
+            ("low", daily_state[column] <= threshold),
+            ("high", daily_state[column] > threshold),
+        ):
+            date_set = set(daily_state.loc[mask, "date"])
+            sliced = prediction_frame[prediction_frame["date"].isin(date_set)].copy()
+            metrics = evaluate_prediction_frame(sliced, topk_list=topk_list)
+            diagnostics[column][slice_name] = {
+                "num_days": int(metrics.get("top1_num_days", 0)),
+                **{f"top{k}_mean_return": float(metrics.get(f"top{k}_mean_return", 0.0)) for k in topk_list},
+                **{f"top{k}_sharpe": float(metrics.get(f"top{k}_sharpe", 0.0)) for k in topk_list},
+            }
+    return diagnostics
 
 
 def evaluate_prediction_file(prediction_path, topk_list=(1,), score_debias="none", score_debias_strength=1.0):

@@ -1,0 +1,42 @@
+[
+  {
+    "gpu": 0,
+    "pid": 42219,
+    "jobs": [
+      "winner_v1-2018",
+      "winner_v1-2022",
+      "winner_local_v1-2018",
+      "winner_local_v1-2022"
+    ]
+  },
+  {
+    "gpu": 1,
+    "pid": 42220,
+    "jobs": [
+      "winner_v1-2019",
+      "winner_v1-2023",
+      "winner_local_v1-2019",
+      "winner_local_v1-2023"
+    ]
+  },
+  {
+    "gpu": 2,
+    "pid": 42221,
+    "jobs": [
+      "winner_v1-2020",
+      "winner_v1-2024",
+      "winner_local_v1-2020",
+      "winner_local_v1-2024"
+    ]
+  },
+  {
+    "gpu": 3,
+    "pid": 42224,
+    "jobs": [
+      "winner_v1-2021",
+      "winner_v1-2025",
+      "winner_local_v1-2021",
+      "winner_local_v1-2025"
+    ]
+  }
+]

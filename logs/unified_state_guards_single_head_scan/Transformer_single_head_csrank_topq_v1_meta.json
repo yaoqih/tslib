@@ -1,0 +1,38 @@
+{
+  "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "model": "Transformer",
+  "variant": "single_head_csrank_topq_v1",
+  "style_columns": [
+    "log_amount",
+    "turnover_rate",
+    "amplitude",
+    "ret_20",
+    "vol_20"
+  ],
+  "state_columns": [
+    "market_cc_mean",
+    "market_cc_std",
+    "market_amplitude_mean",
+    "market_amount_top10_share"
+  ],
+  "quantiles": [
+    0.4,
+    0.5,
+    0.6
+  ],
+  "fallbacks": [
+    "cash"
+  ],
+  "topk_list": [
+    3
+  ]
+}

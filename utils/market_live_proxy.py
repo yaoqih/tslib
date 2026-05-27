@@ -12,6 +12,96 @@ def build_daily_top1_strategy_frame(prediction_frame):
     return top1[["date", "code", "pred", "true"]].sort_values("date").reset_index(drop=True)
 
 
+def build_topk_rollover_strategy_frame(prediction_frame, top_k=3):
+    frame = prediction_frame.copy()
+    ranked = frame.sort_values(["date", "pred"], ascending=[True, False]).copy()
+    ranked = ranked.groupby("date").head(int(top_k)).copy()
+    if "tradable" in ranked.columns:
+        ranked = ranked[ranked["tradable"]].copy()
+    top1 = ranked.groupby("date").head(1).copy()
+    return top1[["date", "code", "pred", "true"]].sort_values("date").reset_index(drop=True)
+
+
+def build_state_gated_top1_strategy_from_daily_state(
+    prediction_frame,
+    daily_state_frame,
+    threshold,
+    bad_side="high",
+    fallback="cash",
+    fallback_top_k=3,
+):
+    if bad_side not in {"high", "low"}:
+        raise ValueError("bad_side must be 'high' or 'low'")
+    if fallback not in {"cash", "topk_rollover"}:
+        raise ValueError("fallback must be 'cash' or 'topk_rollover'")
+
+    strategy = build_daily_top1_strategy_frame(prediction_frame).copy()
+    if fallback == "topk_rollover":
+        fallback_strategy = build_topk_rollover_strategy_frame(
+            prediction_frame=prediction_frame,
+            top_k=fallback_top_k,
+        ).rename(
+            columns={
+                "code": "fallback_code",
+                "pred": "fallback_pred",
+                "true": "fallback_true",
+            }
+        )
+        strategy = strategy.merge(fallback_strategy, on="date", how="left")
+
+    strategy = strategy.merge(daily_state_frame[["date", "state_value"]], on="date", how="left")
+    if bad_side == "high":
+        gated_off = strategy["state_value"] >= float(threshold)
+    else:
+        gated_off = strategy["state_value"] <= float(threshold)
+    strategy["state_gated_off"] = gated_off.fillna(False)
+
+    if fallback == "cash":
+        strategy.loc[strategy["state_gated_off"], "code"] = "CASH"
+        strategy.loc[strategy["state_gated_off"], "pred"] = 0.0
+        strategy.loc[strategy["state_gated_off"], "true"] = 0.0
+    else:
+        strategy.loc[strategy["state_gated_off"], "code"] = strategy.loc[strategy["state_gated_off"], "fallback_code"]
+        strategy.loc[strategy["state_gated_off"], "pred"] = strategy.loc[strategy["state_gated_off"], "fallback_pred"]
+        strategy.loc[strategy["state_gated_off"], "true"] = strategy.loc[strategy["state_gated_off"], "fallback_true"]
+        strategy["code"] = strategy["code"].fillna("CASH")
+        strategy["pred"] = strategy["pred"].fillna(0.0)
+        strategy["true"] = strategy["true"].fillna(0.0)
+        strategy = strategy.drop(columns=["fallback_code", "fallback_pred", "fallback_true"])
+    return strategy.sort_values("date").reset_index(drop=True)
+
+
+def build_state_gated_top1_strategy_frame(
+    prediction_frame,
+    state_column,
+    threshold,
+    bad_side="high",
+    fallback="cash",
+    fallback_top_k=3,
+):
+    if bad_side not in {"high", "low"}:
+        raise ValueError("bad_side must be 'high' or 'low'")
+    if fallback not in {"cash", "topk_rollover"}:
+        raise ValueError("fallback must be 'cash' or 'topk_rollover'")
+    if state_column not in prediction_frame.columns:
+        raise KeyError(f"{state_column} not found in prediction_frame")
+
+    daily_state = (
+        prediction_frame.groupby("date", sort=True)[state_column]
+        .mean()
+        .reset_index()
+        .rename(columns={state_column: "state_value"})
+    )
+    return build_state_gated_top1_strategy_from_daily_state(
+        prediction_frame=prediction_frame,
+        daily_state_frame=daily_state,
+        threshold=threshold,
+        bad_side=bad_side,
+        fallback=fallback,
+        fallback_top_k=fallback_top_k,
+    )
+
+
 def apply_live_trading_proxy(daily_strategy_frame, buy_cost_bps=0.0, sell_cost_bps=0.0):
     frame = daily_strategy_frame.sort_values("date").reset_index(drop=True).copy()
     if frame.empty:

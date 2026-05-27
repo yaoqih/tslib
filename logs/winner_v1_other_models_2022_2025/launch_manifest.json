@@ -1,0 +1,50 @@
+[
+  {
+    "gpu": 0,
+    "pid": 14188,
+    "jobs": [
+      "WPMixer-2022",
+      "TimeMixer-2022",
+      "TimesNet-2022",
+      "PatchTST-2022",
+      "PatchTST-2024"
+    ],
+    "load": 18
+  },
+  {
+    "gpu": 1,
+    "pid": 14189,
+    "jobs": [
+      "WPMixer-2023",
+      "TimeMixer-2023",
+      "TimesNet-2023",
+      "iTransformer-2022",
+      "iTransformer-2024"
+    ],
+    "load": 18
+  },
+  {
+    "gpu": 2,
+    "pid": 14190,
+    "jobs": [
+      "WPMixer-2024",
+      "TimeMixer-2024",
+      "TimesNet-2024",
+      "PatchTST-2023",
+      "PatchTST-2025"
+    ],
+    "load": 18
+  },
+  {
+    "gpu": 3,
+    "pid": 14192,
+    "jobs": [
+      "WPMixer-2025",
+      "TimeMixer-2025",
+      "TimesNet-2025",
+      "iTransformer-2023",
+      "iTransformer-2025"
+    ],
+    "load": 18
+  }
+]

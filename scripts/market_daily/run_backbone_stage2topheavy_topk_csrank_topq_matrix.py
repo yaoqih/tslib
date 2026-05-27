@@ -58,7 +58,19 @@ def build_result_paths(year, model, seq_len, d_model, d_ff, e_layers, n_heads, e
     return base / "top1_predictions.csv", base / "market_metrics.txt"
 
 
-def build_job_record(year, model, feature_set, seq_len, batch_size, cache_path, learning_rate, des, market_cs_recent_k):
+def build_job_record(
+    year,
+    model,
+    feature_set,
+    seq_len,
+    batch_size,
+    cache_path,
+    learning_rate,
+    des,
+    market_cs_recent_k,
+    market_head_candidate_ratio,
+    market_head_candidate_weight,
+):
     model_cfg = MODEL_CONFIGS[model]
     embed = "fixed" if model in {"TimesNet", "TimeMixer"} else "timeF"
     distil = "True"
@@ -113,6 +125,8 @@ def build_job_record(year, model, feature_set, seq_len, batch_size, cache_path, 
         "--market_target_mode", "cross_section_rank",
         "--market_pred_topq_ratio", "0.1",
         "--market_pred_topq_weight", "2.0",
+        "--market_head_candidate_ratio", str(market_head_candidate_ratio),
+        "--market_head_candidate_weight", str(market_head_candidate_weight),
         "--market_rank_loss",
         "--market_rank_weight", "0.1",
         "--market_rank_margin", "0.0",
@@ -180,7 +194,19 @@ def ensure_dirs(output_dir):
     (output_dir / "run_logs").mkdir(parents=True, exist_ok=True)
 
 
-def build_manifest(years, models, feature_set, seq_len, batch_size, cache_path, learning_rate, des, market_cs_recent_k):
+def build_manifest(
+    years,
+    models,
+    feature_set,
+    seq_len,
+    batch_size,
+    cache_path,
+    learning_rate,
+    des,
+    market_cs_recent_k,
+    market_head_candidate_ratio,
+    market_head_candidate_weight,
+):
     rows = []
     for year, model in itertools.product(years, models):
         rows.append(
@@ -194,6 +220,8 @@ def build_manifest(years, models, feature_set, seq_len, batch_size, cache_path, 
                 learning_rate=learning_rate,
                 des=des,
                 market_cs_recent_k=market_cs_recent_k,
+                market_head_candidate_ratio=market_head_candidate_ratio,
+                market_head_candidate_weight=market_head_candidate_weight,
             )
         )
     return pd.DataFrame(rows)
@@ -323,9 +351,14 @@ def evaluate_prediction_artifact(prediction_path):
     top_codes = [code for _, code in metrics.get("top_picks", [])]
     return {
         "top1_mean": metrics["top1_mean_return"],
+        "top1_cum": metrics["top1_cumulative_return"],
         "top1_sharpe": metrics["top1_sharpe"],
         "top3_mean": metrics["top3_mean_return"],
+        "top3_cum": metrics["top3_cumulative_return"],
+        "top3_sharpe": metrics["top3_sharpe"],
         "top5_mean": metrics["top5_mean_return"],
+        "top5_cum": metrics["top5_cumulative_return"],
+        "top5_sharpe": metrics["top5_sharpe"],
         "ic": metrics["ic"],
         "rank_ic": metrics["rank_ic"],
         "unique": len(set(top_codes)),
@@ -333,6 +366,7 @@ def evaluate_prediction_artifact(prediction_path):
         "debias015_top1_mean": debias["top1_mean_return"],
         "debias015_top1_sharpe": debias["top1_sharpe"],
         "num_days": metrics["top1_num_days"],
+        "yearly_metrics": json.dumps(metrics.get("yearly_metrics", []), ensure_ascii=False),
     }
 
 
@@ -366,9 +400,14 @@ def summarize_jobs(output_dir, manifest):
             .agg(
                 years=("year", "count"),
                 avg_top1_mean=("top1_mean", "mean"),
+                avg_top1_cum=("top1_cum", "mean"),
                 avg_top1_sharpe=("top1_sharpe", "mean"),
                 avg_top3_mean=("top3_mean", "mean"),
+                avg_top3_cum=("top3_cum", "mean"),
+                avg_top3_sharpe=("top3_sharpe", "mean"),
                 avg_top5_mean=("top5_mean", "mean"),
+                avg_top5_cum=("top5_cum", "mean"),
+                avg_top5_sharpe=("top5_sharpe", "mean"),
                 avg_ic=("ic", "mean"),
                 avg_rank_ic=("rank_ic", "mean"),
                 avg_unique=("unique", "mean"),
@@ -414,6 +453,8 @@ def build_parser():
     manifest.add_argument("--learning_rate", type=float, default=DEFAULT_LEARNING_RATE)
     manifest.add_argument("--des", default="stage2topheavy_topk_csrank_topq_v2")
     manifest.add_argument("--market_cs_recent_k", type=int, default=5)
+    manifest.add_argument("--market_head_candidate_ratio", type=float, default=0.0)
+    manifest.add_argument("--market_head_candidate_weight", type=float, default=1.0)
 
     launch = subparsers.add_parser("launch")
     launch.add_argument("--output_dir", default="logs/backbone_stage2topheavy_topk_csrank_topq_matrix")
@@ -426,6 +467,8 @@ def build_parser():
     launch.add_argument("--learning_rate", type=float, default=DEFAULT_LEARNING_RATE)
     launch.add_argument("--des", default="stage2topheavy_topk_csrank_topq_v2")
     launch.add_argument("--market_cs_recent_k", type=int, default=5)
+    launch.add_argument("--market_head_candidate_ratio", type=float, default=0.0)
+    launch.add_argument("--market_head_candidate_weight", type=float, default=1.0)
     launch.add_argument("--gpus", default="0,1,2,3")
     launch.add_argument("--dry_run", action="store_true", default=False)
     launch.add_argument("--rerun_completed", action="store_true", default=False)
@@ -454,6 +497,8 @@ def main():
             learning_rate=args.learning_rate,
             des=args.des,
             market_cs_recent_k=args.market_cs_recent_k,
+            market_head_candidate_ratio=args.market_head_candidate_ratio,
+            market_head_candidate_weight=args.market_head_candidate_weight,
         )
         write_manifest(output_dir, manifest)
         print(json.dumps({"manifest_rows": len(manifest)}, ensure_ascii=False))
@@ -473,6 +518,8 @@ def main():
                 learning_rate=args.learning_rate,
                 des=args.des,
                 market_cs_recent_k=args.market_cs_recent_k,
+                market_head_candidate_ratio=args.market_head_candidate_ratio,
+                market_head_candidate_weight=args.market_head_candidate_weight,
             )
             write_manifest(output_dir, manifest)
         manifest = load_manifest(output_dir)

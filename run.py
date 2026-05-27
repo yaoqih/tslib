@@ -174,7 +174,7 @@ if __name__ == '__main__':
     parser.add_argument('--market_aux_feature_set', type=str, default='B_MKT',
                         help='market feature set id for auxiliary head')
     parser.add_argument('--market_target_mode', type=str, default='raw',
-                        help='market regression target mode: raw or cross_section_rank')
+                        help='market regression target mode: raw, cross_section_rank, or cross_section_rank_weighted')
     parser.add_argument('--market_train_horizons', type=str, default='1,3,5',
                         help='comma-separated market training horizons: 1 uses tradable open-open label, 3/5 use close-close labels')
     parser.add_argument('--market_train_horizon_weights', type=str, default='2.0,0.25,0.25',
@@ -221,6 +221,44 @@ if __name__ == '__main__':
                         help='upweight the current predicted top-q fraction of stocks during training')
     parser.add_argument('--market_pred_topq_weight', type=float, default=1.0,
                         help='sample weight assigned to the current predicted top-q fraction')
+    parser.add_argument('--market_head_candidate_ratio', type=float, default=0.0,
+                        help='upweight the union of predicted and true top-q head candidates during training')
+    parser.add_argument('--market_head_candidate_weight', type=float, default=1.0,
+                        help='sample weight assigned to the union head-candidate set')
+    parser.add_argument('--market_winner_loss', action='store_true', default=False,
+                        help='enable head-union winner-selection pairwise loss')
+    parser.add_argument('--market_winner_weight', type=float, default=0.0,
+                        help='loss weight for winner-selection pairwise loss')
+    parser.add_argument('--market_winner_topq_ratio', type=float, default=0.2,
+                        help='top-q ratio used to build the predicted-vs-true head union for winner loss')
+    parser.add_argument('--market_winner_margin', type=float, default=0.0,
+                        help='margin for winner-selection pairwise loss')
+    parser.add_argument('--market_winner_min_target_gap', type=float, default=0.0,
+                        help='minimum target gap used by winner-selection pairwise loss')
+    parser.add_argument('--market_local_loss', action='store_true', default=False,
+                        help='enable local comparable-set pairwise rank loss')
+    parser.add_argument('--market_local_weight', type=float, default=0.0,
+                        help='loss weight for local comparable-set pairwise rank loss')
+    parser.add_argument('--market_local_neighbor_k', type=int, default=20,
+                        help='number of dynamic nearest neighbors used by the local comparable-set loss')
+    parser.add_argument('--market_local_margin', type=float, default=0.0,
+                        help='margin for local comparable-set pairwise rank loss')
+    parser.add_argument('--market_local_min_target_gap', type=float, default=0.0,
+                        help='minimum target gap used by local comparable-set pairwise rank loss')
+    parser.add_argument('--market_local_feature_names', type=str, default='log_amount,turnover_rate,amplitude,ret_20,vol_20',
+                        help='comma-separated market feature names used to build the local comparable-set graph')
+    parser.add_argument('--market_true_rank_alpha', type=float, default=3.0,
+                        help='extra weight scale for true cross-sectional head names in weighted rank mode')
+    parser.add_argument('--market_true_rank_power', type=float, default=2.0,
+                        help='power used for true-rank sample weighting in weighted rank mode')
+    parser.add_argument('--market_aux_rank_reg_weight', type=float, default=0.1,
+                        help='small auxiliary regression weight against rank target in weighted rank mode')
+    parser.add_argument('--market_mixed_rank_weight', type=float, default=1.0,
+                        help='rank-loss weight for cs_two_stage candidate head')
+    parser.add_argument('--market_mixed_reg_weight', type=float, default=1.0,
+                        help='winner regression weight for cs_two_stage winner head')
+    parser.add_argument('--market_winner_topk', type=int, default=20,
+                        help='candidate-pool size used by cs_two_stage winner head')
     parser.add_argument('--market_train_on_tradable_only', action='store_true', default=False,
                         help='apply tradable mask to all market training losses when enabled')
     parser.add_argument('--market_head_concentration_weight', type=float, default=0.0,

@@ -1,0 +1,2 @@
+year,model,variant,score_name,guard_name,num_days,mean_return,cumulative_return,sharpe,switch_count,same_code_streak_days,avg_entry_cost_bps,avg_exit_cost_bps,strategy,state_column,bad_side,threshold,fallback,fallback_top_k
+2025,Transformer,stage2topheavy_topk_csrank_topq_headcand_v2,style_neutral,market_amplitude_mean:high:cash:top3,242,-0.0018568769702479399,-0.590262100848955,-0.49078710557449134,138,103,0.0,0.0,style_neutral:market_amplitude_mean:high:cash:top3,market_amplitude_mean,high,2.9380720164256378,cash,3.0

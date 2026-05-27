@@ -1,0 +1,4 @@
+strategy,num_days,mean_return,cumulative_return,sharpe,switch_count,same_code_streak_days,avg_entry_cost_bps,avg_exit_cost_bps,state_column,state_quantile,state_threshold,bad_side,gated_off_rate
+baseline,242,-0.015172266334876032,-0.9918221357227106,-2.538136040427048,173,68,0.0,0.0,,,,,
+residualized,242,-0.010750182715289259,-0.9759877482329677,-1.8035019030770985,150,91,0.0,0.0,,,,,
+residualized_state_gated_cash,242,-0.005890435789669426,-0.9023766643427819,-1.0953095474089722,167,74,0.0,0.0,market_cc_std,0.8,0.024126322617297222,high,0.2024793388429752

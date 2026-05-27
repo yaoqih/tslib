@@ -1,0 +1,8 @@
+[START] winner_v1 2020
+[END] winner_v1 2020 rc=$?
+[START] winner_v1 2024
+[END] winner_v1 2024 rc=$?
+[START] winner_local_v1 2020
+[END] winner_local_v1 2020 rc=$?
+[START] winner_local_v1 2024
+[END] winner_local_v1 2024 rc=$?

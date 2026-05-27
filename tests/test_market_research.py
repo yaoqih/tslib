@@ -16,19 +16,28 @@ from utils.market_research import (
     add_label_columns,
     apply_static_score_debias,
     build_head_candidate_diagnostics,
+    build_monthly_head_diagnostics,
     build_market_diagnostics,
+    build_state_slice_diagnostics,
+    build_top_pick_feature_profile,
     build_rolling_folds,
     combine_prediction_frames,
     evaluate_prediction_file,
     evaluate_prediction_frame,
     evaluate_topk_returns,
+    evaluate_topk_rollover_returns,
     get_feature_columns,
     get_train_target_columns,
     make_time_features,
     prepare_market_dataframe,
+    residualize_prediction_scores,
 )
 from utils.market_multitask import (
+    build_head_union_mask,
+    build_local_knn_mask,
     build_pred_topq_weights,
+    build_true_rank_sample_weights,
+    build_union_topq_weights,
     combine_market_multitask_losses,
     compute_head_concentration_penalty,
     compute_head_gap_penalty,
@@ -36,18 +45,24 @@ from utils.market_multitask import (
     compute_grouped_pairwise_rank_loss,
     compute_masked_pairwise_rank_loss,
     compute_weighted_masked_regression_loss,
+    compute_weighted_masked_pairwise_rank_loss,
     compute_pairwise_rank_loss,
+    compute_local_neighbor_pairwise_rank_loss,
     compute_rank_ic,
     compute_static_bias_surrogate_penalty,
     compute_topk_mean_return_proxy,
     compute_masked_topk_mean_return_proxy,
     compute_topk_listwise_loss,
     compute_masked_topk_listwise_loss,
+    compute_winner_pairwise_rank_loss,
 )
 from utils.tools import TrainLossPlateauCheckpoint
 from utils.market_live_proxy import (
     apply_live_trading_proxy,
     build_daily_top1_strategy_frame,
+    build_topk_rollover_strategy_frame,
+    build_state_gated_top1_strategy_frame,
+    build_state_gated_top1_strategy_from_daily_state,
     summarize_live_proxy,
 )
 from utils.market_selector_audit import (
@@ -57,9 +72,29 @@ from utils.market_selector_audit import (
 )
 from scripts.market_daily.evaluate_ensembles import build_confidence_selector_frame
 from scripts.market_daily.run_backbone_stage2topheavy_topk_matrix import build_job_record
+from scripts.market_daily.compare_final_state_guard_strategies import build_strategy_comparison_artifacts
 
 
 class TestMarketResearch(unittest.TestCase):
+    def test_evaluate_topk_rollover_returns_falls_back_to_first_tradable_inside_head(self):
+        frame = pd.DataFrame(
+            {
+                "date": pd.to_datetime(
+                    ["2024-01-02", "2024-01-02", "2024-01-02", "2024-01-03", "2024-01-03"]
+                ),
+                "code": ["A", "B", "C", "A", "B"],
+                "pred": [0.9, 0.8, 0.7, 0.9, 0.8],
+                "true": [0.10, 0.20, -0.10, -0.05, 0.30],
+                "tradable": [False, True, True, False, True],
+            }
+        )
+
+        metrics = evaluate_topk_rollover_returns(frame, top_k=3)
+
+        self.assertEqual(metrics["num_days"], 2)
+        self.assertAlmostEqual(metrics["mean_return"], 0.25, places=6)
+        self.assertAlmostEqual(metrics["positive_rate"], 1.0, places=6)
+
     def test_build_head_candidate_diagnostics_computes_daily_overlap_regret_and_score_stats(self):
         frame = pd.DataFrame(
             {
@@ -107,6 +142,52 @@ class TestMarketResearch(unittest.TestCase):
         self.assertAlmostEqual(summary["hit_true1_rate"], 0.5, places=6)
         self.assertAlmostEqual(summary["avg_overlap_pred2_true2"], 1.5, places=6)
         self.assertAlmostEqual(summary["avg_regret"], 0.25, places=6)
+
+    def test_build_monthly_head_diagnostics_aggregates_daily_rows(self):
+        daily_rows = [
+            {"date": "2024-01-02", "top1_true": 0.10, "top3_mean": 0.05, "top5_mean": 0.04, "hit_top1_in_true20": 1, "regret_vs_best_tradable": 0.01, "score_max_prob": 0.2},
+            {"date": "2024-01-03", "top1_true": -0.20, "top3_mean": -0.02, "top5_mean": 0.00, "hit_top1_in_true20": 0, "regret_vs_best_tradable": 0.30, "score_max_prob": 0.3},
+            {"date": "2024-02-01", "top1_true": 0.30, "top3_mean": 0.10, "top5_mean": 0.08, "hit_top1_in_true20": 1, "regret_vs_best_tradable": 0.00, "score_max_prob": 0.1},
+        ]
+
+        monthly = build_monthly_head_diagnostics(daily_rows)
+
+        self.assertEqual(list(monthly["month"]), ["2024-01", "2024-02"])
+        self.assertAlmostEqual(monthly.iloc[0]["top1_mean"], -0.05, places=6)
+        self.assertAlmostEqual(monthly.iloc[0]["hit20"], 0.5, places=6)
+        self.assertAlmostEqual(monthly.iloc[1]["top3_mean"], 0.10, places=6)
+
+    def test_build_top_pick_feature_profile_joins_pick_counts_with_feature_means(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": pd.to_datetime(["2024-01-02", "2024-01-02", "2024-01-03", "2024-01-03"]),
+                "code": ["A", "B", "A", "B"],
+                "pred": [0.9, 0.1, 0.8, 0.2],
+                "true": [0.10, -0.05, 0.20, -0.10],
+                "tradable": [True, True, True, True],
+            }
+        )
+        feature_frame = pd.DataFrame(
+            {
+                "date": pd.to_datetime(["2024-01-02", "2024-01-02", "2024-01-03", "2024-01-03"]),
+                "code": ["A", "B", "A", "B"],
+                "log_amount": [1.0, 2.0, 3.0, 4.0],
+                "vol_20": [0.1, 0.2, 0.3, 0.4],
+            }
+        )
+
+        profile = build_top_pick_feature_profile(
+            prediction_frame,
+            feature_frame,
+            feature_columns=("log_amount", "vol_20"),
+            top_n=2,
+        )
+
+        self.assertEqual(profile.iloc[0]["code"], "A")
+        self.assertEqual(int(profile.iloc[0]["pick_count"]), 2)
+        self.assertAlmostEqual(profile.iloc[0]["mean_true"], 0.15, places=6)
+        self.assertAlmostEqual(profile.iloc[0]["mean_log_amount"], 2.0, places=6)
+        self.assertAlmostEqual(profile.iloc[0]["mean_vol_20"], 0.2, places=6)
 
     def test_build_head_candidate_diagnostics_reports_top_pick_concentration_and_debias_delta(self):
         frame = pd.DataFrame(
@@ -479,6 +560,13 @@ class TestMarketResearch(unittest.TestCase):
         self.assertAlmostEqual(file_metrics["top1_mean_return"], direct_metrics["top1_mean_return"], places=8)
         self.assertAlmostEqual(file_metrics["top1_cumulative_return"], direct_metrics["top1_cumulative_return"], places=8)
         self.assertAlmostEqual(file_metrics["rank_ic"], direct_metrics["rank_ic"], places=8)
+        self.assertIn("yearly_metrics", file_metrics)
+        self.assertEqual(len(file_metrics["yearly_metrics"]), 1)
+        self.assertAlmostEqual(
+            file_metrics["yearly_metrics"][0]["top1_cumulative_return"],
+            direct_metrics["yearly_metrics"][0]["top1_cumulative_return"],
+            places=8,
+        )
 
     def test_make_time_features_respects_frequency_shape(self):
         dates = pd.to_datetime(["2022-01-04", "2022-01-05"])
@@ -966,6 +1054,199 @@ class TestMarketResearch(unittest.TestCase):
 
         self.assertEqual(strategy["code"].tolist(), ["BBB", "BBB"])
         self.assertEqual(strategy["true"].tolist(), [0.03, 0.04])
+
+    def test_residualize_prediction_scores_removes_linear_style_bias(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-02"],
+                "code": ["AAA", "BBB", "CCC"],
+                "pred": [1.0, 2.0, 3.0],
+                "true": [0.1, 0.2, 0.3],
+            }
+        )
+        feature_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-02"],
+                "code": ["AAA", "BBB", "CCC"],
+                "log_amount": [10.0, 20.0, 30.0],
+            }
+        )
+
+        result = residualize_prediction_scores(
+            prediction_frame=prediction_frame,
+            feature_frame=feature_frame,
+            feature_columns=("log_amount",),
+        )
+
+        self.assertIn("pred_resid", result.columns)
+        self.assertAlmostEqual(float(result["pred_resid"].abs().sum()), 0.0, places=6)
+
+    def test_build_state_gated_top1_strategy_can_hold_cash_on_bad_state(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-03", "2020-01-03"],
+                "code": ["AAA", "BBB", "AAA", "BBB"],
+                "pred": [0.9, 0.8, 0.7, 0.6],
+                "true": [0.03, 0.01, -0.20, 0.05],
+                "tradable": [True, True, True, True],
+                "market_cc_std": [0.01, 0.01, 0.05, 0.05],
+            }
+        )
+
+        strategy = build_state_gated_top1_strategy_frame(
+            prediction_frame=prediction_frame,
+            state_column="market_cc_std",
+            threshold=0.03,
+            bad_side="high",
+            fallback="cash",
+        )
+
+        self.assertEqual(strategy["code"].tolist(), ["AAA", "CASH"])
+        self.assertEqual(strategy["true"].tolist(), [0.03, 0.0])
+        self.assertEqual(strategy["state_gated_off"].tolist(), [False, True])
+
+    def test_build_topk_rollover_strategy_frame_chooses_first_tradable_inside_head(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-02", "2020-01-03", "2020-01-03"],
+                "code": ["AAA", "BBB", "CCC", "AAA", "BBB"],
+                "pred": [0.9, 0.8, 0.7, 0.9, 0.8],
+                "true": [-0.10, 0.20, 0.05, -0.20, 0.30],
+                "tradable": [False, True, True, False, True],
+            }
+        )
+
+        strategy = build_topk_rollover_strategy_frame(prediction_frame, top_k=3)
+
+        self.assertEqual(strategy["code"].tolist(), ["BBB", "BBB"])
+        self.assertEqual(strategy["true"].tolist(), [0.20, 0.30])
+
+    def test_build_state_gated_top1_strategy_can_fallback_to_topk_rollover(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-03", "2020-01-03", "2020-01-03"],
+                "code": ["AAA", "BBB", "AAA", "BBB", "CCC"],
+                "pred": [0.9, 0.8, 0.95, 0.85, 0.75],
+                "true": [0.03, 0.01, -0.20, 0.05, 0.02],
+                "tradable": [True, True, False, True, True],
+                "market_cc_std": [0.01, 0.01, 0.05, 0.05, 0.05],
+            }
+        )
+
+        strategy = build_state_gated_top1_strategy_frame(
+            prediction_frame=prediction_frame,
+            state_column="market_cc_std",
+            threshold=0.03,
+            bad_side="high",
+            fallback="topk_rollover",
+            fallback_top_k=3,
+        )
+
+        self.assertEqual(strategy["code"].tolist(), ["AAA", "BBB"])
+        self.assertEqual(strategy["true"].tolist(), [0.03, 0.05])
+        self.assertEqual(strategy["state_gated_off"].tolist(), [False, True])
+
+    def test_build_state_gated_top1_strategy_from_daily_state_uses_shared_threshold(self):
+        prediction_frame = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-02", "2020-01-03", "2020-01-03"],
+                "code": ["AAA", "BBB", "AAA", "BBB"],
+                "pred": [0.9, 0.8, 0.7, 0.6],
+                "true": [0.03, 0.01, -0.20, 0.05],
+                "tradable": [True, True, True, True],
+            }
+        )
+        daily_state = pd.DataFrame(
+            {
+                "date": ["2020-01-02", "2020-01-03"],
+                "state_value": [0.01, 0.05],
+            }
+        )
+
+        strategy = build_state_gated_top1_strategy_from_daily_state(
+            prediction_frame=prediction_frame,
+            daily_state_frame=daily_state,
+            threshold=0.03,
+            bad_side="high",
+            fallback="cash",
+        )
+
+        self.assertEqual(strategy["code"].tolist(), ["AAA", "CASH"])
+        self.assertEqual(strategy["state_gated_off"].tolist(), [False, True])
+
+    def test_build_strategy_comparison_artifacts_builds_yearly_table_and_curve(self):
+        strategy_frames = {
+            "plain_top1": {
+                2024: pd.DataFrame(
+                    {
+                        "date": pd.to_datetime(["2024-01-02", "2024-01-03"]),
+                        "code": ["AAA", "BBB"],
+                        "pred": [0.9, 0.8],
+                        "true": [0.10, -0.05],
+                    }
+                )
+            },
+            "guarded": {
+                2024: pd.DataFrame(
+                    {
+                        "date": pd.to_datetime(["2024-01-02", "2024-01-03"]),
+                        "code": ["AAA", "CASH"],
+                        "pred": [0.9, 0.0],
+                        "true": [0.10, 0.00],
+                        "state_gated_off": [False, True],
+                    }
+                )
+            },
+        }
+
+        yearly, curve, summary = build_strategy_comparison_artifacts(strategy_frames)
+
+        self.assertEqual(set(yearly["strategy_name"]), {"plain_top1", "guarded"})
+        self.assertEqual(set(summary["strategy_name"]), {"plain_top1", "guarded"})
+        self.assertEqual(curve.groupby("strategy_name").size().to_dict(), {"plain_top1": 2, "guarded": 2})
+        guarded_year = yearly[yearly["strategy_name"] == "guarded"].iloc[0]
+        self.assertAlmostEqual(float(guarded_year["gated_off_rate"]), 0.5, places=6)
+        guarded_curve = curve[curve["strategy_name"] == "guarded"].sort_values("date")
+        self.assertAlmostEqual(float(guarded_curve.iloc[-1]["cumulative_return"]), 0.10, places=6)
+
+    def test_build_head_union_mask_marks_pred_and_true_head_union(self):
+        pred = torch.tensor([0.9, 0.8, 0.2, 0.1], dtype=torch.float32)
+        target = torch.tensor([0.1, 0.2, 0.9, 0.0], dtype=torch.float32)
+
+        mask = build_head_union_mask(pred=pred, target=target, topq_ratio=0.25)
+
+        self.assertEqual(mask.tolist(), [True, False, True, False])
+
+    def test_compute_winner_pairwise_rank_loss_prefers_better_head_ordering(self):
+        pred_good = torch.tensor([0.9, 0.5, 0.1], dtype=torch.float32)
+        pred_bad = torch.tensor([0.1, 0.5, 0.9], dtype=torch.float32)
+        target = torch.tensor([0.8, 0.3, 0.1], dtype=torch.float32)
+        candidate_mask = torch.tensor([True, True, True], dtype=torch.bool)
+
+        good_loss = compute_winner_pairwise_rank_loss(pred_good, target, candidate_mask=candidate_mask)
+        bad_loss = compute_winner_pairwise_rank_loss(pred_bad, target, candidate_mask=candidate_mask)
+
+        self.assertLess(good_loss.item(), bad_loss.item())
+
+    def test_compute_local_neighbor_pairwise_rank_loss_prefers_better_local_ordering(self):
+        features = torch.tensor(
+            [
+                [0.0, 0.0],
+                [0.0, 0.1],
+                [1.0, 1.0],
+                [1.0, 1.1],
+            ],
+            dtype=torch.float32,
+        )
+        target = torch.tensor([0.8, 0.3, 0.7, 0.2], dtype=torch.float32)
+        pred_good = torch.tensor([0.9, 0.4, 0.8, 0.1], dtype=torch.float32)
+        pred_bad = torch.tensor([0.2, 0.8, 0.1, 0.9], dtype=torch.float32)
+        neighbor_mask = build_local_knn_mask(features, neighbor_k=1)
+
+        good_loss = compute_local_neighbor_pairwise_rank_loss(pred_good, target, neighbor_mask)
+        bad_loss = compute_local_neighbor_pairwise_rank_loss(pred_bad, target, neighbor_mask)
+
+        self.assertLess(good_loss.item(), bad_loss.item())
 
     def test_add_label_columns_marks_next_open_limit_up_as_untradable(self):
         df = pd.DataFrame(
@@ -1521,7 +1802,8 @@ class TestMarketResearch(unittest.TestCase):
         self.assertEqual(out["forecast"].shape, (5, 1, 1))
         self.assertEqual(out["backbone_latent"].shape, (5, 4, 8))
         self.assertEqual(out["cross_section_tokens"].shape, (5, 4, 8))
-        self.assertEqual(out["time_weights"].shape, (5, 4, 1))
+        self.assertEqual(out["recent_raw_tokens"].shape, (5, 4, 8))
+        self.assertEqual(out["recent_cs_tokens"].shape, (5, 4, 8))
 
     def test_market_cross_section_model_requires_true_sequence_latent_backbone(self):
         class DummyBase(torch.nn.Module):
@@ -1895,6 +2177,284 @@ class TestMarketResearch(unittest.TestCase):
         self.assertGreater(losses["head_gap_loss"].item(), 0.0)
         self.assertAlmostEqual(losses["static_bias_loss"].item(), losses["head_gap_loss"].item(), places=6)
         self.assertGreater(losses["total_loss"].item(), losses["reg_loss"].item())
+
+    def test_compute_market_loss_adds_winner_and_local_losses(self):
+        exp = Exp_Long_Term_Forecast.__new__(Exp_Long_Term_Forecast)
+        exp.args = SimpleNamespace(
+            features="MS",
+            pred_len=1,
+            market_rank_loss=False,
+            market_rank_weight=0.0,
+            market_topk_loss=False,
+            market_topk_weight=0.0,
+            market_rank_margin=0.0,
+            market_cross_section_batches=True,
+            market_aux_cls=False,
+            market_train_horizon_weights="1.0,0.5,0.5",
+            market_head_concentration_weight=0.0,
+            market_static_bias_weight=0.0,
+            market_winner_loss=True,
+            market_winner_weight=0.7,
+            market_winner_topq_ratio=0.67,
+            market_winner_margin=0.0,
+            market_local_loss=True,
+            market_local_weight=0.3,
+            market_local_neighbor_k=1,
+            market_local_feature_names="log_amount,turnover_rate",
+            loss="MSE",
+            huber_delta=1.0,
+            data="market_daily",
+            task_name="long_term_forecast",
+            market_regression_use_tradable_mask=False,
+        )
+        exp.device = torch.device("cpu")
+
+        forecast = torch.tensor(
+            [
+                [[0.0, 0.2]],
+                [[0.0, 0.9]],
+                [[0.0, -0.1]],
+            ],
+            dtype=torch.float32,
+        )
+        batch_y = torch.zeros_like(forecast)
+        batch_x = torch.tensor(
+            [
+                [[0.0, 0.0]],
+                [[0.0, 0.1]],
+                [[1.0, 1.0]],
+            ],
+            dtype=torch.float32,
+        )
+        dataset = SimpleNamespace(
+            train_target_columns=["label", "label_close_3d", "label_close_5d"],
+            sample_train_targets_scaled=torch.tensor(
+                [[0.8, 0.4, 0.2], [0.3, 0.1, 0.0], [0.1, 0.0, -0.1]],
+                dtype=torch.float32,
+            ),
+            sample_train_targets_raw=torch.tensor(
+                [[0.12, 0.08, 0.05], [0.05, 0.03, 0.01], [-0.02, -0.01, -0.005]],
+                dtype=torch.float32,
+            ),
+            sample_tradable_mask=torch.tensor([True, True, True], dtype=torch.bool),
+            feature_columns=["log_amount", "turnover_rate"],
+        )
+        batch_meta = torch.tensor([0, 1, 2], dtype=torch.int64)
+
+        losses = exp._compute_market_loss(
+            outputs=forecast,
+            batch_y=batch_y,
+            batch_meta=batch_meta,
+            dataset=dataset,
+            reg_criterion=torch.nn.MSELoss(),
+            batch_x=batch_x,
+        )
+
+        self.assertGreater(losses["winner_loss"].item(), 0.0)
+        self.assertGreaterEqual(losses["local_loss"].item(), 0.0)
+        self.assertGreater(losses["total_loss"].item(), losses["reg_loss"].item())
+
+    def test_compute_market_loss_upweights_union_head_candidates(self):
+        exp = Exp_Long_Term_Forecast.__new__(Exp_Long_Term_Forecast)
+        exp.args = SimpleNamespace(
+            features="MS",
+            pred_len=1,
+            market_rank_loss=True,
+            market_rank_weight=1.0,
+            market_topk_loss=False,
+            market_topk_weight=0.0,
+            market_rank_margin=0.1,
+            market_cross_section_batches=True,
+            market_aux_cls=False,
+            market_train_horizon_weights="1.0,0.0,0.0",
+            market_regression_use_tradable_mask=False,
+            market_train_on_tradable_only=False,
+            market_pred_topq_ratio=0.0,
+            market_pred_topq_weight=1.0,
+            market_head_candidate_ratio=0.34,
+            market_head_candidate_weight=5.0,
+            market_target_mode="cross_section_rank",
+            loss="MSE",
+            huber_delta=1.0,
+            data="market_daily",
+            task_name="long_term_forecast",
+        )
+        exp.device = torch.device("cpu")
+
+        forecast = torch.tensor(
+            [
+                [[0.0, 0.20]],
+                [[0.0, 0.10]],
+                [[0.0, 0.00]],
+            ],
+            dtype=torch.float32,
+        )
+        batch_y = torch.zeros_like(forecast)
+        dataset = SimpleNamespace(
+            target_mode="cross_section_rank",
+            train_target_columns=["label", "label_close_3d", "label_close_5d"],
+            sample_train_targets_scaled=torch.tensor(
+                [[0.9, 0.0, 0.0], [0.1, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                dtype=torch.float32,
+            ),
+            sample_train_targets_raw=torch.tensor(
+                [[0.9, 0.0, 0.0], [0.1, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                dtype=torch.float32,
+            ),
+            sample_tradable_mask=torch.tensor([True, True, True], dtype=torch.bool),
+        )
+        batch_meta = torch.tensor([0, 1, 2], dtype=torch.int64)
+
+        losses = exp._compute_market_loss(
+            outputs=forecast,
+            batch_y=batch_y,
+            batch_meta=batch_meta,
+            dataset=dataset,
+            reg_criterion=torch.nn.MSELoss(),
+        )
+
+        pred_score = torch.tensor([0.20, 0.10, 0.00], dtype=torch.float32)
+        rank_target = exp._build_cross_section_rank_target(dataset.sample_train_targets_raw, tradable_mask=None)
+        weights = build_union_topq_weights(
+            pred=pred_score,
+            target=dataset.sample_train_targets_raw[:, 0],
+            tradable_mask=None,
+            topq_ratio=0.34,
+            topq_weight=5.0,
+        )
+        expected_reg = compute_weighted_masked_regression_loss(
+            pred=pred_score,
+            target=rank_target,
+            tradable_mask=None,
+            sample_weight=None,
+            loss_name="MSE",
+        )
+        expected_rank = compute_weighted_masked_pairwise_rank_loss(
+            pred=pred_score,
+            target=rank_target,
+            tradable_mask=None,
+            sample_weight=weights,
+            margin=0.1,
+        )
+
+        self.assertAlmostEqual(losses["reg_loss"].item(), expected_reg.item(), places=6)
+        self.assertAlmostEqual(losses["rank_loss"].item(), expected_rank.item(), places=6)
+
+    def test_compute_market_loss_weighted_cross_section_rank_uses_rank_as_main_objective(self):
+        exp = Exp_Long_Term_Forecast.__new__(Exp_Long_Term_Forecast)
+        exp.args = SimpleNamespace(
+            features="MS",
+            pred_len=1,
+            market_rank_loss=True,
+            market_rank_weight=1.0,
+            market_topk_loss=False,
+            market_topk_weight=0.0,
+            market_rank_margin=0.0,
+            market_cross_section_batches=True,
+            market_aux_cls=False,
+            market_train_horizon_weights="1.0,0.0,0.0",
+            market_regression_use_tradable_mask=False,
+            market_train_on_tradable_only=False,
+            market_target_mode="cross_section_rank_weighted",
+            market_true_rank_alpha=3.0,
+            market_true_rank_power=2.0,
+            market_aux_rank_reg_weight=0.1,
+            loss="MSE",
+            huber_delta=1.0,
+            data="market_daily",
+            task_name="long_term_forecast",
+        )
+        exp.device = torch.device("cpu")
+
+        forecast = torch.tensor(
+            [
+                [[0.0, 0.20]],
+                [[0.0, 0.10]],
+                [[0.0, 0.00]],
+            ],
+            dtype=torch.float32,
+        )
+        batch_y = torch.zeros_like(forecast)
+        dataset = SimpleNamespace(
+            target_mode="cross_section_rank_weighted",
+            train_target_columns=["label", "label_close_3d", "label_close_5d"],
+            sample_train_targets_scaled=torch.tensor(
+                [[0.9, 0.0, 0.0], [0.1, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                dtype=torch.float32,
+            ),
+            sample_train_targets_raw=torch.tensor(
+                [[0.9, 0.0, 0.0], [0.1, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                dtype=torch.float32,
+            ),
+            sample_tradable_mask=torch.tensor([True, True, True], dtype=torch.bool),
+        )
+        batch_meta = torch.tensor([0, 1, 2], dtype=torch.int64)
+
+        losses = exp._compute_market_loss(
+            outputs=forecast,
+            batch_y=batch_y,
+            batch_meta=batch_meta,
+            dataset=dataset,
+            reg_criterion=torch.nn.MSELoss(),
+        )
+
+        pred_score = torch.tensor([0.20, 0.10, 0.00], dtype=torch.float32)
+        rank_target = exp._build_cross_section_rank_target(dataset.sample_train_targets_raw, tradable_mask=None)
+        weights = build_true_rank_sample_weights(
+            target=dataset.sample_train_targets_raw[:, 0],
+            alpha=3.0,
+            power=2.0,
+        )
+        expected_reg = compute_weighted_masked_regression_loss(
+            pred=pred_score,
+            target=rank_target,
+            tradable_mask=None,
+            sample_weight=weights,
+            loss_name="MSE",
+        )
+        expected_rank = compute_weighted_masked_pairwise_rank_loss(
+            pred=pred_score,
+            target=rank_target,
+            tradable_mask=None,
+            sample_weight=weights,
+            margin=0.0,
+        )
+        expected_total = expected_rank + 0.1 * expected_reg
+
+        self.assertAlmostEqual(losses["reg_loss"].item(), expected_reg.item(), places=6)
+        self.assertAlmostEqual(losses["rank_loss"].item(), expected_rank.item(), places=6)
+        self.assertAlmostEqual(losses["total_loss"].item(), expected_total.item(), places=6)
+
+
+    def test_evaluate_prediction_frame_reports_yearly_topk_metrics(self):
+        frame = pd.DataFrame(
+            {
+                "date": pd.to_datetime(
+                    [
+                        "2021-01-04",
+                        "2021-01-04",
+                        "2021-01-05",
+                        "2021-01-05",
+                        "2022-01-04",
+                        "2022-01-04",
+                    ]
+                ),
+                "code": ["A", "B", "A", "B", "A", "B"],
+                "pred": [0.9, 0.1, 0.2, 0.8, 0.7, 0.3],
+                "true": [0.10, -0.05, -0.02, 0.04, 0.03, -0.01],
+                "tradable": [True, True, True, True, True, True],
+            }
+        )
+
+        metrics = evaluate_prediction_frame(frame, topk_list=(1, 2))
+
+        self.assertIn("yearly_metrics", metrics)
+        yearly = metrics["yearly_metrics"]
+        self.assertEqual([row["year"] for row in yearly], [2021, 2022])
+        self.assertAlmostEqual(yearly[0]["top1_cumulative_return"], (1.10 * 1.04) - 1.0, places=6)
+        self.assertAlmostEqual(yearly[1]["top1_cumulative_return"], 0.03, places=6)
+        self.assertAlmostEqual(yearly[0]["top2_mean_return"], 0.0175, places=6)
+        self.assertAlmostEqual(yearly[0]["top1_positive_rate"], 1.0, places=6)
 
     def test_training_phase_config_uses_stage_specific_topk_settings(self):
         exp = Exp_Long_Term_Forecast.__new__(Exp_Long_Term_Forecast)
